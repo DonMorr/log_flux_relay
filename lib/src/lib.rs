@@ -77,6 +77,29 @@ use serde::{Deserialize, Serialize};
 
     // }
 
+    pub fn process_raw_log_entry(raw_entry: String, mut last_partial_line: String)-> (Vec<String>, String){
+        let mut found_lines:Vec<String> = vec![];
+        let line_incomplete: bool = !raw_entry.ends_with('\n');
+        let mut it: std::iter::Peekable<std::str::Lines> = raw_entry.lines().peekable();
+
+        while let Some(line) = it.next()  {
+            // Is it the last line?
+            if it.peek().is_none() {
+                if line_incomplete {
+                    last_partial_line = last_partial_line + line;
+                }
+                else {
+                    found_lines.push(String::from(line));
+                }
+            }
+            else{
+                found_lines.push(String::from(line));
+            }
+        }
+
+        (found_lines, last_partial_line)
+    }
+
 }
 
 
@@ -92,7 +115,68 @@ mod tests {
 
     use crate::log_flux_relay::FileConfig;
 
-    use super::log_flux_relay::{SerialConfiguration, FlowControl, SocketConfiguration, RelayConfig, Stream};
+    use super::log_flux_relay::{SerialConfiguration, FlowControl, SocketConfiguration, RelayConfig, Stream, process_raw_log_entry};
+
+    #[test]
+    fn process_raw_log_entry_test_simple_log(){
+        let expected_lines: Vec<String> = vec![String::from("first"), 
+                                                String::from("second"),
+                                                String::from("third")];
+        let expected_partial_line: String = String::new();
+
+        let entry:String = String::from("first\r\nsecond\r\nthird\r\n");
+        let last_partial_line:String = String::new();
+
+        let (lines,partial_line) = process_raw_log_entry(entry, last_partial_line);
+
+        assert!(expected_lines == lines);
+        assert!(expected_partial_line == partial_line);
+    }
+
+    #[test]
+    fn process_raw_log_entry_test_last_with_no_newling(){
+        let expected_lines: Vec<String> = vec![String::from("first"), 
+                                                String::from("second")];
+        let expected_partial_line: String = String::from("third");
+
+        let entry:String = String::from("first\r\nsecond\r\nthird");
+        let last_partial_line:String = String::new();
+
+        let (lines,partial_line) = process_raw_log_entry(entry, last_partial_line);
+
+        assert!(expected_lines == lines);
+        assert!(expected_partial_line == partial_line);
+    }
+
+    #[test]
+    fn process_raw_log_entry_test_last_partial_line_not_empty(){
+        let expected_partial_line: String = String::new();
+        let expected_lines: Vec<String> = vec![String::from("start_first"),
+                                                String::from("second"), 
+                                                String::from("third")];
+
+        let last_partial_line:String = String::from("start_");
+        let entry:String = String::from("first\r\nsecond\r\nthird\r\n");
+
+        let (lines,partial_line) = process_raw_log_entry(entry, last_partial_line);
+
+        assert!(expected_lines == lines);
+        assert!(expected_partial_line == partial_line);
+    }
+
+    #[test]
+    fn process_raw_log_entry_test_last_partial_line_no_lines(){
+        let expected_partial_line: String = String::from("start_first");
+        let expected_lines: Vec<String> = vec![];
+
+        let last_partial_line:String = String::from("start_");
+        let entry:String = String::from("first");
+
+        let (lines,partial_line) = process_raw_log_entry(entry, last_partial_line);
+
+        assert!(expected_lines == lines);
+        assert!(expected_partial_line == partial_line);
+    }
 
     #[test]
     fn it_works() {
