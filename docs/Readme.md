@@ -1,3 +1,14 @@
+# Docs
+
+## Next
+
+- add ability to save and load configs.
+
+
+## Backlog
+
+- Design system
+
 Project Ideas
 -------------
 - Media playback server and clients
