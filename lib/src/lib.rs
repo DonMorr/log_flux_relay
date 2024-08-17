@@ -1,73 +1,10 @@
 
+
+mod common;
+mod relay_engine;
 mod log_flux_relay{
 
-use serde::{Deserialize, Serialize};
 
-    #[derive(Serialize, Deserialize)]
-    pub enum FlowControl{
-        None(),
-        XonXoff,
-        Etc
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct SerialConfiguration{
-        pub baud_rate: u32,
-        pub port_path: String,
-        pub start_bits: u8,
-        pub stop_bits:u8,
-        pub flow_control:FlowControl
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct SocketConfiguration{
-        pub ip_address: String,
-        pub port: u16
-    }
-    
-
-    #[derive(Serialize, Deserialize)]
-    pub struct SystemConfig{
-        // todo
-    }
-    
-    #[derive(Serialize, Deserialize)]
-    pub struct FileConfig{
-        pub file_name: String
-    }
-    
-    #[derive(Serialize, Deserialize)]
-    pub struct TerminalConfig{
-    
-    }
-    
-    #[derive(Serialize, Deserialize)]
-    pub struct MqttConfig{
-        // todo
-    }
-
-
-    #[derive(Serialize, Deserialize)]
-    pub struct BufferConfig{
-        // todo
-    }
-    
-    #[derive(Serialize, Deserialize)]
-    pub enum Stream{
-        Serial{config: SerialConfiguration},
-        Socket{config: SocketConfiguration},
-        System{config: SystemConfig},
-        File{config: FileConfig},
-        Terminal{config: TerminalConfig},
-        Mqtt{config: MqttConfig},
-        Buffer{config: BufferConfig}
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct RelayConfig{
-        pub input_streams: Vec<Stream>,
-        pub output_streams: Vec<Stream>
-    }
 
     // pub fn load_config(file_path: String) -> Config {
     //     let config:Config = Config.new
@@ -124,7 +61,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(test)]
 mod tests {
 
-    use crate::log_flux_relay::{SerialConfiguration, FileConfig, FlowControl, SocketConfiguration, RelayConfig, Stream, process_raw_log_entry};
+    use crate::common::{SerialConfiguration, FileConfig, FlowControl, SocketConfiguration, RelayConfig, Stream};
+
+    use crate::log_flux_relay::process_raw_log_entry;
 
     #[test]
     fn process_raw_log_entry_test_simple_log(){
