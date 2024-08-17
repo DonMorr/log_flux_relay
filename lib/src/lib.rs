@@ -77,37 +77,26 @@ use serde::{Deserialize, Serialize};
 
     // }
 
-    pub fn process_raw_log_entry(raw_entry: String, mut last_partial_line: String)-> (Vec<String>, String){
+    pub fn process_raw_log_entry(raw_entry: String, mut last_partial_line: String) -> (Vec<String>, String) {
         let mut found_lines: Vec<String> = vec![];
-        let line_incomplete = !raw_entry.ends_with("\r\n");
-        let mut it = raw_entry.lines().peekable();
-        let last_partial_line_not_empty = !last_partial_line.is_empty();
+        let line_incomplete: bool = !raw_entry.ends_with('\n');
+        let mut lines = raw_entry.lines().peekable();
     
-        // Handle the first line
-        if let Some(first_line) = it.next() {
-            if last_partial_line_not_empty {
-                last_partial_line.push_str(first_line);
-                if it.peek().is_none() && line_incomplete {
-                    // Only one line and it's incomplete
-                    return (found_lines, last_partial_line);
-                } else {
-                    found_lines.push(last_partial_line.clone());
-                    last_partial_line.clear();
-                }
-            } else if it.peek().is_none() && line_incomplete {
-                // Only one line and it's incomplete
-                last_partial_line = String::from(first_line);
-                return (found_lines, last_partial_line);
+        // Handle the first line by combining it with last_partial_line
+        if let Some(first_line) = lines.next() {
+            let complete_first_line = last_partial_line + first_line;
+            if lines.peek().is_some() || !line_incomplete {
+                found_lines.push(complete_first_line);
+                last_partial_line = String::new();
             } else {
-                found_lines.push(String::from(first_line));
+                last_partial_line = complete_first_line;
             }
         }
     
         // Process the remaining lines
-        while let Some(line) = it.next() {
-            if it.peek().is_none() && line_incomplete {
-                // Last line and it's incomplete
-                last_partial_line.push_str(line);
+        while let Some(line) = lines.next() {
+            if lines.peek().is_none() && line_incomplete {
+                last_partial_line = String::from(line);
             } else {
                 found_lines.push(String::from(line));
             }
@@ -168,12 +157,9 @@ mod tests {
         println!(">>> Entry: {}", entry);
         println!(">>> Start partial line: {}", last_partial_line);
         let (lines,partial_line) = process_raw_log_entry(entry, last_partial_line);
-
-        println!(">>> Expected partial line: {}", expected_partial_line);
-        println!(">>> Actual partial line: {}", partial_line);
-        println!(">>> Expected lines: {:?}", expected_lines);
-        println!(">>> Actual lines: {:?}", lines);
-
+        println!("Expected Lines: {:?}", expected_lines);
+        println!("Actual lines: {:?}", lines);
+        assert!(expected_lines == lines);
         assert!(expected_partial_line == partial_line);
         assert!(expected_lines == lines);
     }

@@ -25,6 +25,7 @@ Ability to interface with a range of log sources - multiple source types
 - System?
 - File
 - Terminal (std in)
+- Android logcat
 
 Ability to forward logs to multiple destination types
 - Serial
