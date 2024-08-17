@@ -77,7 +77,20 @@ use serde::{Deserialize, Serialize};
 
     // }
 
-    pub fn process_raw_log_entry(raw_entry: String, mut last_partial_line: String) -> (Vec<String>, String) {
+    /// Processes a raw log entry string, splitting it into individual lines and handling any partial lines.
+    ///
+    /// This function takes a raw log entry string and the last partial line from the previous entry (if any),
+    /// and returns a vector of complete lines and the new partial line (if any).
+    ///
+    /// # Arguments
+    /// * `raw_entry` - The raw log entry string to process.
+    /// * `last_partial_line` - The last partial line from the previous entry, if any.
+    ///
+    /// # Returns
+    /// A tuple containing:
+    /// * A vector of complete lines extracted from the raw entry.
+    /// * The new partial line, if any, from the end of the raw entry.
+     pub fn process_raw_log_entry(raw_entry: String, mut last_partial_line: String) -> (Vec<String>, String) {
         let mut found_lines: Vec<String> = vec![];
         let line_incomplete: bool = !raw_entry.ends_with('\n');
         let mut lines = raw_entry.lines().peekable();

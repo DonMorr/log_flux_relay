@@ -1,0 +1,91 @@
+<mxfile host="65bd71144e">
+    <diagram id="ar5CEzZoJuOq2WLicGav" name="Page-1">
+        <mxGraphModel dx="1186" dy="738" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="58" y="180" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="190" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Sources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="78" y="200" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Relay Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="30" width="240" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="598" y="180" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="608" y="190" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="Sinks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="618" y="200" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="" style="shape=flexArrow;endArrow=classic;html=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.004;entryY=0.87;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="4" target="5" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="158" y="380" as="sourcePoint"/>
+                        <mxPoint x="208" y="330" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="12" value="" style="shape=flexArrow;endArrow=classic;html=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=1.004;exitY=0.852;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;exitPerimeter=0;" parent="1" source="5" target="6" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="518" y="219.5" as="sourcePoint"/>
+                        <mxPoint x="598" y="219.58000000000004" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="14" value="Router&lt;br&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="292" y="180" width="216" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="ASCII Stream" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#f5f5f5;strokeColor=#666666;labelBorderColor=default;" parent="1" vertex="1">
+                    <mxGeometry x="58" y="30" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="" style="shape=flexArrow;endArrow=classic;html=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=0.317;exitY=1.083;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;" parent="1" source="18" target="2" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="208" y="240" as="sourcePoint"/>
+                        <mxPoint x="288" y="239.90999999999997" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="17" value="ASCII Stream" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#f5f5f5;strokeColor=#666666;labelBorderColor=default;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="40" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="Input Streams" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#f5f5f5;strokeColor=#666666;labelBorderColor=default;" parent="1" vertex="1">
+                    <mxGeometry x="78" y="50" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="&lt;h1&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Sources&lt;/span&gt;&lt;/h1&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;A source typically takes a stream input, breaking the received data data into individual log entries based on a specified delimiter.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Sources have one input and one output.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Sources may filter their output.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;The input streams may be a static file, system log, ttyUSB serial interface (binary or ascii).&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;fontColor=#000000;" vertex="1" parent="1">
+                    <mxGeometry x="43" y="270" width="190" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="ASCII Stream" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#f5f5f5;strokeColor=#666666;labelBorderColor=default;" vertex="1" parent="1">
+                    <mxGeometry x="598" y="30" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="ASCII Stream" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#f5f5f5;strokeColor=#666666;labelBorderColor=default;" vertex="1" parent="1">
+                    <mxGeometry x="608" y="40" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="Outputs" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#f5f5f5;strokeColor=#666666;labelBorderColor=default;" vertex="1" parent="1">
+                    <mxGeometry x="618" y="50" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="" style="shape=flexArrow;endArrow=classic;html=1;fillColor=#d5e8d4;strokeColor=#82b366;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.333;entryY=1.05;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="6" target="22">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="530.96" y="235.96000000000004" as="sourcePoint"/>
+                        <mxPoint x="608" y="235" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="25" value="&lt;h1&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Relay Engine&lt;/span&gt;&lt;/h1&gt;&lt;div&gt;The relay engine is reponsible for receiving log events from sources and routing them to the appropriate sinks.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Upon start-up, the Relay Engine is given a configuration to load. This configuration defines the sources and sinks in the system, along with the required routing.&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;fontColor=#000000;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="270" width="190" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="&lt;h1&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Sinks&lt;/span&gt;&lt;/h1&gt;&lt;p&gt;&lt;span style=&quot;background-color: initial; font-size: 12px; font-weight: normal;&quot;&gt;Sinks receive receive log events from the relay engine. These log events may come from multiple sources.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;background-color: initial; font-size: 12px; font-weight: normal;&quot;&gt;A sink may process log events, such as extracting log severity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;background-color: initial; font-size: 12px; font-weight: normal;&quot;&gt;Sinks may also act as a buffer for log entries, write the entries to file, standard out, database, or forward them to some other output.&lt;/span&gt;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;fontColor=#000000;" vertex="1" parent="1">
+                    <mxGeometry x="598" y="270" width="190" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="&lt;h1&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Log Entries&lt;/span&gt;&lt;/h1&gt;&lt;div&gt;Log entries may be either ascii or binary data.&lt;/div&gt;&lt;div&gt;Each entry will have a timestamp, defining when the Source created it.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;fontColor=#000000;" vertex="1" parent="1">
+                    <mxGeometry x="39" y="510" width="190" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="&lt;h1&gt;Architecture&lt;/h1&gt;&lt;div&gt;The Relay Engine, along with each Source and Sink will run in their own threads.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;fontColor=#000000;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="510" width="190" height="140" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
