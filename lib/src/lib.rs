@@ -2,10 +2,8 @@
 
 mod common;
 mod relay_engine;
+
 mod log_flux_relay{
-
-
-
     // pub fn load_config(file_path: String) -> Config {
     //     let config:Config = Config.new
     // }
@@ -61,8 +59,10 @@ mod log_flux_relay{
 #[cfg(test)]
 mod tests {
 
-    use crate::common::{SerialConfiguration, FileConfig, FlowControl, SocketConfiguration, RelayConfig, Stream};
+    use uuid::Uuid;
 
+    use crate::common::stream::{DataType, Direction, FileConfig, FlowControl, SerialConfiguration, SocketConfiguration, Stream, StreamInfo};
+    use crate::common::relay_config::RelayConfig;
     use crate::log_flux_relay::process_raw_log_entry;
 
     #[test]
@@ -161,15 +161,28 @@ mod tests {
         };
 
         let mut config: RelayConfig = RelayConfig{
-            input_streams: vec![],
-            output_streams: vec![]
+            streams: vec![],
         };
 
-        config.input_streams.push(Stream::Serial { config: serial_config });
-        config.input_streams.push(Stream::Socket { config: sock_config });
+        let serial_info: StreamInfo = StreamInfo{
+            uuid: Uuid::new_v4(),
+            name: String::from("A Serial Stream"),
+            direction: Direction::Input,
+            data_type: DataType::Ascii,
+            output_streams: Vec::new(),
+            input_filter: String::from("*")
+        };
+        let socket_info: StreamInfo = StreamInfo{
+            uuid: Uuid::new_v4(),
+            name: String::from("A Socket Stream"),
+            direction: Direction::Input,
+            data_type: DataType::Binary,
+            output_streams: Vec::new(),
+            input_filter: String::from("*")
+        };
 
-        config.output_streams.push(Stream::File { config: file_config_1 });
-        config.output_streams.push(Stream::File { config: file_config_2 });
+        config.streams.push(Stream::Serial { config: serial_config, info: serial_info });
+        config.streams.push(Stream::Socket { config: sock_config, info: socket_info });
 
         println!("Config: {}", serde_json::to_string(&config).unwrap());
         
