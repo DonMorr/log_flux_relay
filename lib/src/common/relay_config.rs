@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use super::stream::Stream;
+use super::stream::{StreamConfig};
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct RelayConfig {
-    pub streams: Vec<Stream>
+    pub stream_configs: Vec<StreamConfig>
 }

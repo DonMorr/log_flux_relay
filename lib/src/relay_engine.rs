@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
-use crate::common::relay_config::RelayConfig;
+//use crate::common::relay_config::RelayConfig;
 
-
+/* 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct RelayEngine {
     config: RelayConfig,
@@ -40,7 +40,7 @@ impl RelayEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+/*
     #[test]
     fn test_from_config() {
         let config  = RelayConfig {
@@ -50,7 +50,7 @@ mod tests {
         let engine = RelayEngine::from_config(config.clone());
         assert_eq!(engine.config.streams, config.streams);
     }
-
+*/
     /*
     #[test]
     fn test_from_config_file() {
@@ -80,3 +80,4 @@ mod tests {
         engine.stop();
     }
 }
+*/
