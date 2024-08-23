@@ -26,7 +26,7 @@ pub fn save_config(config: &StreamConfig, config_file_path:String) -> Result<(),
 
 #[cfg(test)]
 mod tests {
-    use crate::common::stream::{DataType, Direction, StreamTypeConfig};
+    use crate::stream::{DataType, Direction, StreamTypeConfig};
     use super::*;
     use tempfile::Builder;
     use uuid::Uuid;

@@ -8,6 +8,7 @@ pub mod socket_stream;
 pub mod mqtt_stream;
 pub mod terminal_stream;
 pub mod config_manager;
+pub mod dummy_stream;
 
 use serial_stream::SerialStreamConfig;
 use buffer_stream::BufferStreamConfig;
@@ -15,6 +16,7 @@ use file_stream::FileStreamConfig;
 use socket_stream::SocketStreamConfiguration;
 use mqtt_stream::MqttStreamConfig;
 use terminal_stream::TerminalStreamConfig;
+use dummy_stream::DummyStreamConfig;
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -38,6 +40,7 @@ pub enum StreamTypeConfig {
     Terminal{config: TerminalStreamConfig},
     Mqtt{config: MqttStreamConfig},
     Buffer{config: BufferStreamConfig},
+    Dummy{config: DummyStreamConfig},
     None
 }
 
@@ -78,7 +81,7 @@ pub trait Stream {
     fn start(&self);
     fn stop(&self);
     fn pause(&self);
-    fn get_info(&self) -> &StreamConfig;
+    fn get_config(&self) -> &StreamConfig;
 }
 
 

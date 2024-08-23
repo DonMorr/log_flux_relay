@@ -36,7 +36,7 @@ impl Stream for SerialStream {
         todo!("Implement pause");
     }
 
-    fn get_info(&self) -> &StreamConfig {
+    fn get_config(&self) -> &StreamConfig {
         &self.config
     }
 }
@@ -56,7 +56,7 @@ impl SerialStream {
 mod tests {
     use uuid::Uuid;
 
-    use crate::common::stream::{DataType, Direction};
+    use crate::stream::{DataType, Direction};
 
     use super::*;
 
@@ -145,7 +145,7 @@ mod tests {
         );
 
         let serial_stream = SerialStream::new(stream_config).unwrap();
-        let info = serial_stream.get_info();
+        let info = serial_stream.get_config();
 
         assert_eq!(info.uuid, uuid);
         assert_eq!(info.name, name);
