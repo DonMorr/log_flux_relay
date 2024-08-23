@@ -3,7 +3,13 @@ use super::{Stream, StreamConfig, StreamTypeConfig};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct DummyStreamConfig{
-    message_generation_rate_hz: u16
+    pub message_generation_rate_hz: u16
+}
+
+impl DummyStreamConfig {
+    pub fn new() -> Self {
+        DummyStreamConfig {message_generation_rate_hz: 1}
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]

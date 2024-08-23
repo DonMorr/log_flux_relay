@@ -1,10 +1,9 @@
 use serde::{Deserialize, Serialize};
-use super::stream::{StreamConfig};
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct YalmConfig {
-    pub stream_configs: Vec<StreamConfig>
+    pub stream_configs: Vec<crate::stream::StreamConfig>
 }
 
 impl YalmConfig{

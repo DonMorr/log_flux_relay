@@ -191,6 +191,9 @@ dependencies = [
 [[package]]
 name = "service"
 version = "0.1.0"
+dependencies = [
+ "lib",
+]
 
 [[package]]
 name = "syn"

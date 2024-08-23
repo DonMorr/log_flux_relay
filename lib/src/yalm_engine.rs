@@ -1,14 +1,19 @@
 use std::fs;
 use std::path::Path;
+use crate::stream::StreamConfig;
 use super::yalm_config::YalmConfig;
 
 pub struct YalmEngine{
-    config: YalmConfig
+    pub config: YalmConfig
 }
 
 impl YalmEngine {
     pub fn new() -> Self {
         YalmEngine { config: YalmConfig::new()}
+    }
+
+    pub fn add_stream(&mut self, config_to_add: StreamConfig){
+        self.config.stream_configs.push(config_to_add);
     }
     
     // Constructor: Creates a new YalmEngine from a config file path

@@ -1,11 +1,11 @@
 
-mod yalm_engine;
-mod yalm_config;
-mod filter;
-mod message;
-mod stream;
+pub mod yalm_engine;
+pub mod yalm_config;
+pub mod filter;
+pub mod message;
+pub mod stream;
 
-mod log_flux_relay{
+pub mod log_flux_relay{
     
      pub fn process_raw_log_entry(raw_entry: String, mut last_partial_line: String) -> (Vec<String>, String) {
         let mut found_lines: Vec<String> = vec![];
