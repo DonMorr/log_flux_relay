@@ -1,21 +1,43 @@
 use std::fs;
 use std::path::Path;
-use crate::stream::StreamConfig;
+use crate::stream::{buffer_stream::BufferStream, dummy_stream::DummyStream, serial_stream::SerialStream, Stream, StreamConfig, StreamTypeConfig};
 use super::yalm_config::YalmConfig;
 
+
 pub struct YalmEngine{
-    pub config: YalmConfig
+    streams: Vec<Box<dyn Stream>>
 }
 
 impl YalmEngine {
     pub fn new() -> Self {
-        YalmEngine { config: YalmConfig::new()}
+        YalmEngine { streams: Vec::new()}
     }
 
     pub fn add_stream(&mut self, config_to_add: StreamConfig){
-        self.config.stream_configs.push(config_to_add);
+        println!("Adding stream: {}", config_to_add.name);
+
+        match config_to_add.type_config {
+            StreamTypeConfig::Serial { .. } => {
+                let stream = SerialStream::new(config_to_add).unwrap();
+                self.streams.push(Box::new(stream));
+            },
+            StreamTypeConfig::Buffer { .. } => {
+                let stream = BufferStream::new(config_to_add).unwrap();
+                self.streams.push(Box::new(stream));
+            },
+            StreamTypeConfig::Dummy { .. } => {
+                let stream = DummyStream::new(config_to_add).unwrap();
+                self.streams.push(Box::new(stream));
+            },
+            StreamTypeConfig::Socket { config } => todo!(),
+            StreamTypeConfig::File { config } => todo!(),
+            StreamTypeConfig::Terminal { config } => todo!(),
+            StreamTypeConfig::Mqtt { config } => todo!(),
+            StreamTypeConfig::None => todo!(),
+        }
     }
     
+    /*
     // Constructor: Creates a new YalmEngine from a config file path
     pub fn from_config_file<P: AsRef<Path>>(path: P) -> Result<Self, String> {
         let config_content = fs::read_to_string(path).map_err(|e| e.to_string())?;
@@ -28,11 +50,12 @@ impl YalmEngine {
     pub fn from_config(config: YalmConfig) -> Self {
         YalmEngine { config }
     }
+    */
 
     // Starts the relay engine
     pub fn start(&self) {
         // Implement your start logic here
-        println!("YalmEngine started with config: {:?}", self.config);
+        println!("YalmEngine started");
     }
 
     // Stops the relay engine
@@ -42,6 +65,7 @@ impl YalmEngine {
     }
 }
 
+/*
 // Unit tests
 #[cfg(test)]
 mod tests {
@@ -86,3 +110,4 @@ mod tests {
         engine.stop();
     }
 }
+    */

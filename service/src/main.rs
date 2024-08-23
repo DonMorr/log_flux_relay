@@ -1,4 +1,4 @@
-use lib::{stream::{dummy_stream::DummyStreamConfig, Direction, StreamConfig, StreamTypeConfig}, yalm_config::YalmConfig, yalm_engine::YalmEngine};
+use lib::{stream::{dummy_stream::DummyStreamConfig, Direction, StreamConfig, StreamTypeConfig}, yalm_engine::YalmEngine};
 
 
 
@@ -18,7 +18,7 @@ fn main() {
 
     let dummy_stream_config_con: DummyStreamConfig = DummyStreamConfig {message_generation_rate_hz: 1};
     let mut consumer_stream_config_b: StreamConfig = StreamConfig::default();
-    consumer_stream_config_b.name = String::from("Consumer Stream A");
+    consumer_stream_config_b.name = String::from("Consumer Stream B");
     consumer_stream_config_b.direction = Direction::Input;
     consumer_stream_config_b.type_config = StreamTypeConfig::Dummy { config:dummy_stream_config_con };
     consumer_stream_config_b.input_filter = String::from("tock");
