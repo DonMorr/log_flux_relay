@@ -18,16 +18,19 @@ pub struct DummyStream {
 }
 
 impl Stream for DummyStream {
-    fn start(&self) {
+    fn start(&self) -> bool {
         todo!("Implement start");
+        false
     }
 
-    fn stop(&self) {
+    fn stop(&self) -> bool {
         todo!("Implement stop");
+        false
     }
 
-    fn pause(&self) {
+    fn pause(&self) -> bool {
         todo!("Implement pause");
+        false
     }
 
     fn get_config(&self) -> &StreamConfig {

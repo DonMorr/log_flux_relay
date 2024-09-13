@@ -24,15 +24,15 @@ pub struct SerialStream {
 }
 
 impl Stream for SerialStream { 
-    fn start(&self) {
+    fn start(&self) -> bool {
         todo!("Implement start");
     }
 
-    fn stop(&self) {
+    fn stop(&self) -> bool {
         todo!("Implement stop");
     }
 
-    fn pause(&self) {
+    fn pause(&self) -> bool {
         todo!("Implement pause");
     }
 

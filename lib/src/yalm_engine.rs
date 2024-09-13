@@ -1,5 +1,7 @@
 use std::fs;
 use std::path::Path;
+use uuid::Uuid;
+
 use crate::stream::{buffer_stream::BufferStream, dummy_stream::DummyStream, serial_stream::SerialStream, Stream, StreamConfig, StreamTypeConfig};
 use super::yalm_config::YalmConfig;
 
@@ -52,10 +54,75 @@ impl YalmEngine {
     }
     */
 
+    fn all_uuids_unique(uuids_orig: &Vec<&Uuid>) -> bool {
+        let mut uuids = uuids_orig.clone();
+        // Sort the vector in place
+        uuids.sort();
+    
+        // Check for consecutive duplicates
+        for i in 1..uuids.len() {
+            if uuids[i] == uuids[i - 1] {
+                return false; // Found a duplicate
+            }
+        }
+        true // No duplicates found
+    }
+
+    fn all_elements_in_other(vec1: &Vec<&Uuid>, vec2: &Vec<&Uuid>) -> bool {
+        vec1.iter().all(|uuid| vec2.contains(uuid))
+    }
+
+    fn is_valid(&self) -> bool {
+        let mut success: bool = true;
+        let mut stream_uuids: Vec<&Uuid> = Vec::new();
+        let mut output_stream_uuids: Vec<&Uuid> = Vec::new();
+
+        for stream in self.streams.iter() {
+            let config: &StreamConfig = stream.get_config();
+
+            stream_uuids.push(&config.uuid);
+            for output_stream_uuid in config.output_streams.iter(){
+                output_stream_uuids.push(output_stream_uuid);
+            }
+        }
+
+        // stream_uuids must be unique
+        if !Self::all_uuids_unique(&stream_uuids) {
+            success = false;
+        }
+
+        // All output_stream_uuids must be in stream_uuids
+        if !Self::all_elements_in_other(&output_stream_uuids, &stream_uuids){
+            success = false;
+        }
+
+
+        success
+    }
+    
+    fn start_streams(&self) -> bool {
+        let mut success: bool = true;
+        for stream in self.streams.iter() {
+            if !stream.start(){
+                success = false;
+            }
+        }
+        success
+    }
+
     // Starts the relay engine
-    pub fn start(&self) {
-        // Implement your start logic here
-        println!("YalmEngine started");
+    pub fn start(&self) -> bool {
+        let mut success: bool = true;
+
+        if !self.is_valid(){
+            success = false;
+        }
+
+        if !self.start_streams(){
+            success = false;
+        }
+        
+        success
     }
 
     // Stops the relay engine

@@ -78,9 +78,9 @@ impl Default for StreamConfig{
 }
 
 pub trait Stream {
-    fn start(&self);
-    fn stop(&self);
-    fn pause(&self);
+    fn start(&self) -> bool;
+    fn stop(&self) -> bool;
+    fn pause(&self) -> bool;
     fn get_config(&self) -> &StreamConfig;
 }
 

@@ -32,7 +32,12 @@ fn main() {
     engine.add_stream(consumer_stream_config_a);
     engine.add_stream(consumer_stream_config_b);
 
-    engine.start();
+    if engine.start() {
+        println!("Successfully started");
+    }
+    else {
+        println!("Failed to start, validation failed");
+    }
 
 }
 

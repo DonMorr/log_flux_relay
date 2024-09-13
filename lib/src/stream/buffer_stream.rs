@@ -13,15 +13,15 @@ pub struct BufferStream{
 }
 
 impl Stream for BufferStream{
-    fn start(&self) {
+    fn start(&self) -> bool {
+        todo!();
+    }
+
+    fn stop(&self) -> bool {
         todo!()
     }
 
-    fn stop(&self) {
-        todo!()
-    }
-
-    fn pause(&self) {
+    fn pause(&self) -> bool {
         todo!()
     }
 
