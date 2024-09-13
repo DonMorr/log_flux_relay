@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use serde::{Deserialize, Serialize};
-
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::thread;
 pub mod serial_stream;
 pub mod buffer_stream;
 pub mod file_stream;
@@ -63,6 +64,64 @@ impl StreamConfig {
     }
 }
 
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum StreamState {
+    Stopped,
+    Running,
+    Paused
+}
+
+#[derive(Debug)]
+pub struct StreamStatus{
+    pub is_initialized: bool,
+    pub state: StreamState,
+    sender:Sender<Message>,
+    receiver:Receiver<Message>,
+    outputs: Vec<Sender<Message>>
+
+}
+
+impl StreamStatus{
+    pub fn new() -> StreamStatus{
+        let (tx,rx) = mpsc::channel();
+        let outputs:Vec<Sender<Message>> = vec![];
+
+        let thread_handle = thread::spawn(move || {
+            while let Ok(msg) = rx.recv() {
+                for output   in &outputs {
+                    output.send(msg.clone()).unwrap();
+                }
+            }
+        });
+
+        StreamStatus{
+            is_initialized: false, 
+            state: StreamState::Stopped,
+            sender: tx,
+            receiver: rx,
+            outputs: outputs
+        }
+    }
+    
+    pub fn get_tx_clone(&self) -> Sender<Message>{
+        self.sender.clone()
+    }
+
+    pub fn add_output_tx(&mut self, receiver: Sender<Message>){
+        self.outputs.push(receiver);
+    }
+
+    pub fn initialise(&mut self){
+        if self.is_initialized {
+            todo!("Stream already initialised");
+        }
+
+        
+        self.is_initialized = true;
+    }
+}
+
 impl Default for StreamConfig{
     fn default() -> Self {
         Self {
@@ -77,11 +136,27 @@ impl Default for StreamConfig{
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct Message {
+    pub timestamp: u32,
+    pub text: String,
+}
+
+impl Message {
+    pub fn new(timestamp: u32, text: String) -> Message {
+        Message {
+            timestamp,
+            text,
+        }
+    }
+}
+
 pub trait Stream {
     fn start(&self) -> bool;
     fn stop(&self) -> bool;
     fn pause(&self) -> bool;
     fn get_config(&self) -> &StreamConfig;
+    fn get_status(&self) -> &StreamStatus;
 }
 
 

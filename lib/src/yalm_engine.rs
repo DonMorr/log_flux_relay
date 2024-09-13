@@ -86,18 +86,31 @@ impl YalmEngine {
             }
         }
 
-        // stream_uuids must be unique
+        // The uuids of the individual streams must be unique.
         if !Self::all_uuids_unique(&stream_uuids) {
             success = false;
         }
 
-        // All output_stream_uuids must be in stream_uuids
+        // The output stream uuids of each stream must match the uuids of the streams.
         if !Self::all_elements_in_other(&output_stream_uuids, &stream_uuids){
             success = false;
         }
 
-
         success
+    }
+
+    
+    fn link_streams(&self){
+        for stream in self.streams.iter() {
+            let config: &StreamConfig = stream.get_config();
+            for output_stream_uuid in config.output_streams.iter(){
+                for stream_to_link in self.streams.iter() {
+                    if stream_to_link.get_config().uuid == *output_stream_uuid{
+                        stream.add_output_stream(stream_to_link);
+                    }
+                }
+            }
+        }
     }
     
     fn start_streams(&self) -> bool {
@@ -109,8 +122,7 @@ impl YalmEngine {
         }
         success
     }
-
-    // Starts the relay engine
+    
     pub fn start(&self) -> bool {
         let mut success: bool = true;
 
@@ -121,15 +133,14 @@ impl YalmEngine {
         if !self.start_streams(){
             success = false;
         }
-        
+
         success
     }
 
-    // Stops the relay engine
     pub fn stop(&self) {
-        // Implement your stop logic here
         println!("YalmEngine stopped.");
     }
+
 }
 
 /*

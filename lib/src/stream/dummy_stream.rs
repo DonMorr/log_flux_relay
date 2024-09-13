@@ -1,5 +1,7 @@
+use std::sync::mpsc::{Sender, Receiver};
+
 use serde::{Deserialize, Serialize};
-use super::{Stream, StreamConfig, StreamTypeConfig};
+use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamStatus};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct DummyStreamConfig{
@@ -12,12 +14,14 @@ impl DummyStreamConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Debug)]
 pub struct DummyStream {
-    config: StreamConfig
+    config: StreamConfig,
+    status: StreamStatus
 }
 
 impl Stream for DummyStream {
+
     fn start(&self) -> bool {
         todo!("Implement start");
         false
@@ -36,12 +40,16 @@ impl Stream for DummyStream {
     fn get_config(&self) -> &StreamConfig {
         &self.config
     }
+
+    fn get_status(&self) -> &StreamStatus {
+        &self.status
+    }
 }
 
 impl DummyStream {
     pub fn new(config: StreamConfig) -> Result<Self, &'static str> {
         if let StreamTypeConfig::Dummy {..} = config.type_config {
-            Ok(Self{config})
+            Ok(Self{config: config, status: StreamStatus::new()})
         }
         else{
             Err("Invalid type_config for a DummyStream")

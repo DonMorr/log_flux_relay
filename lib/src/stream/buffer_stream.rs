@@ -1,6 +1,7 @@
 
+use std::sync::mpsc::{Sender, Receiver};
 use serde::{Deserialize, Serialize};
-use super::{Stream, StreamConfig, StreamTypeConfig};
+use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamStatus};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct BufferStreamConfig {
@@ -27,6 +28,18 @@ impl Stream for BufferStream{
 
     fn get_config(&self) -> &StreamConfig {
         todo!()
+    }
+
+    fn get_tx_clone(&self) -> &Sender<Message>{
+        todo!("Implement get_sender");
+    }
+
+    fn set_receiver(&mut self, receiver: Receiver<Message>){
+        todo!("Implement set_receiver");
+    }
+
+    fn get_status(&self) -> &StreamStatus {
+        todo!("Implement get_status");
     }
 }
 
