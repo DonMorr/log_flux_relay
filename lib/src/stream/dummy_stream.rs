@@ -33,11 +33,11 @@ impl Stream for DummyStream {
         let stream_name = self.config.name.clone();
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let sender: Sender<Message> = self.new_message_generated_sender.clone();
-        let mut counter: u64 = 0;
-        let mut msg_counter: i32 = 0;
         let generates_messages: bool;
         let message_generation_period_ms: u64;
         let prints_to_standard_out: bool;
+        let mut counter: u64 = 0;
+        let mut msg_counter: i32 = 0;
 
         if let StreamTypeConfig::Dummy {config} = &self.config.type_config {
             generates_messages = config.generates_messages;
@@ -83,11 +83,6 @@ impl Stream for DummyStream {
     }
     fn stop(&mut self) -> bool {
         todo!("Implement stop");
-        false
-    }
-
-    fn pause(&mut self) -> bool {
-        todo!("Implement pause");
         false
     }
 

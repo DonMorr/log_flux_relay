@@ -21,7 +21,7 @@ use mqtt_stream::MqttStreamConfig;
 use terminal_stream::TerminalStreamConfig;
 use dummy_stream::DummyStreamConfig;
 
-pub const INTERNAL_STREAM_TICK_MS: u64 = 1; //Maximum internal TICK rate is 1000/HZ.
+pub const INTERNAL_STREAM_TICK_MS: u64 = 10; //Maximum internal TICK rate is 1000/HZ.
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum Direction {
@@ -66,7 +66,6 @@ impl StreamConfig {
         }
     }
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum StreamState {
@@ -218,7 +217,6 @@ impl Message {
 pub trait Stream {
     fn start(&mut self) -> bool;
     fn stop(&mut self) -> bool;
-    fn pause(&mut self) -> bool;
     fn get_config(&self) -> &StreamConfig;
     fn get_status(&self) -> &StreamCore;
     fn get_uuid(&self) -> &Uuid;
