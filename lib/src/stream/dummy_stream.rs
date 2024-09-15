@@ -1,20 +1,20 @@
-use std::{str::FromStr, sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
+use std::{sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
 use chrono::prelude::*;
-
 use serde::{Deserialize, Serialize};
-use serde_json::from_str;
 use uuid::Uuid;
+use crate::stream::INTERNAL_STREAM_TICK_MS;
 use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct DummyStreamConfig{
-    pub message_generation_rate_hz: u16,
-    pub generates_messages: bool
+    pub inter_message_generation_period_ms: u64,
+    pub generates_messages: bool,
+    pub print_to_standard_out: bool
 }
 
 impl DummyStreamConfig {
     pub fn new() -> Self {
-        DummyStreamConfig {message_generation_rate_hz: 1, generates_messages: true}
+        DummyStreamConfig {inter_message_generation_period_ms: 1000, generates_messages: false, print_to_standard_out: true}
     }
 }
 
@@ -33,42 +33,48 @@ impl Stream for DummyStream {
         let stream_name = self.config.name.clone();
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let sender: Sender<Message> = self.new_message_generated_sender.clone();
-        let mut counter: u16 = 0;
+        let mut counter: u64 = 0;
         let mut msg_counter: i32 = 0;
-        let mut generates_messages: bool;
+        let generates_messages: bool;
+        let message_generation_period_ms: u64;
+        let prints_to_standard_out: bool;
 
         if let StreamTypeConfig::Dummy {config} = &self.config.type_config {
             generates_messages = config.generates_messages;
+            message_generation_period_ms = config.inter_message_generation_period_ms;
+            prints_to_standard_out = config.print_to_standard_out;
         }
         else{
             todo!("Handle this error");
         }
         
-        if generates_messages {
-            println!("{} - DummyStream generates messages", stream_name);
-        }
-        
-        println!("{} - DummyStream starting thread", stream_name);
+        println!("'{}' - DummyStream starting thread", stream_name);
 
         self.thread_handle = Some(thread::spawn(move || loop {
 
             // Handle Message received from core
             while let Ok(msg) = receiver.try_recv() {
-                println!("{} - DummyStream received Message: {}", stream_name, msg.text)
+                if prints_to_standard_out {
+                    println!("'{}' - DummyStream received Message: {} with timestamp: {}", stream_name, msg.text, msg.timestamp_ms);
+                }
             }
             
             if generates_messages{
-                counter += 1;
-                if counter >= 100 {
-                    counter = 0;
+                counter = counter + INTERNAL_STREAM_TICK_MS;
+
+                if counter % message_generation_period_ms == 0 {
                     msg_counter += 1;
-                    let new_msg: Message = Message::new(Utc::now().timestamp(), format!("New message {} from '{}'", msg_counter, stream_name));
-                    println!("{} - DummyStream generated new message: {}", stream_name, new_msg.text);
+                    let new_msg: Message = Message::new(Utc::now().timestamp_millis(), format!("New message {} from '{}'", msg_counter, stream_name));
+                    
+                    if prints_to_standard_out {
+                        println!("'{}' - DummyStream generated new message: {} at time {}", stream_name, new_msg.text, new_msg.timestamp_ms);
+                    }
+
                     sender.send(new_msg);
                 }
             }
 
-            thread::sleep(Duration::from_millis(10));
+            thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
         }));
 
         self.core.start();

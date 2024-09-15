@@ -5,20 +5,25 @@ use lib::{stream::{dummy_stream::DummyStreamConfig, Direction, StreamConfig, Str
 
 
 fn main() {
-    let dummy_stream_config_gen: DummyStreamConfig = DummyStreamConfig {message_generation_rate_hz: 1, generates_messages: true};
+    let mut dummy_stream_config_gen: DummyStreamConfig = DummyStreamConfig::new();
+    dummy_stream_config_gen.generates_messages = true;
+    dummy_stream_config_gen.inter_message_generation_period_ms = 10;
+    dummy_stream_config_gen.print_to_standard_out = false;
+
     let mut generator_stream_config: StreamConfig = StreamConfig::default();
     generator_stream_config.name = String::from("Generator Stream");
     generator_stream_config.direction = Direction::Output;
     generator_stream_config.type_config = StreamTypeConfig::Dummy { config:dummy_stream_config_gen };
 
-    let dummy_stream_config_con: DummyStreamConfig = DummyStreamConfig {message_generation_rate_hz: 1, generates_messages: false};
+    let dummy_stream_config_con: DummyStreamConfig = DummyStreamConfig::new();
     let mut consumer_stream_config_a: StreamConfig = StreamConfig::default();
     consumer_stream_config_a.name = String::from("Consumer Stream A");
     consumer_stream_config_a.direction = Direction::Input;
     consumer_stream_config_a.type_config = StreamTypeConfig::Dummy { config:dummy_stream_config_con };
     consumer_stream_config_a.input_filter = String::from("tick");
 
-    let dummy_stream_config_con: DummyStreamConfig = DummyStreamConfig {message_generation_rate_hz: 1, generates_messages: false};
+    let mut dummy_stream_config_con: DummyStreamConfig = DummyStreamConfig::new();
+    dummy_stream_config_con.print_to_standard_out = false;
     let mut consumer_stream_config_b: StreamConfig = StreamConfig::default();
     consumer_stream_config_b.name = String::from("Consumer Stream B");
     consumer_stream_config_b.direction = Direction::Input;
@@ -34,8 +39,12 @@ fn main() {
     engine.add_stream(consumer_stream_config_a);
     engine.add_stream(consumer_stream_config_b);
 
+    if engine.initialise(){
+        println!("Engine successfully initialised");
+    }
+
     if engine.start() {
-        println!("Successfully started");
+        println!("Engine successfully started");
         thread::sleep(Duration::from_secs(10));
     }
     else {

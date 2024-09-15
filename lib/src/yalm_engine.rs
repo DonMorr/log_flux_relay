@@ -178,8 +178,8 @@ impl YalmEngine {
         }
         success
     }
-    
-    pub fn start(&mut self) -> bool {
+
+    pub fn initialise(&mut self) -> bool {
         let mut success: bool = true;
 
         if !self.is_valid(){
@@ -187,6 +187,12 @@ impl YalmEngine {
         }
 
         self.link_streams();
+
+        success
+    }
+    
+    pub fn start(&mut self) -> bool {
+        let mut success: bool = true;
 
         if !self.start_streams(){
             success = false;

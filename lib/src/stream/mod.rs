@@ -21,6 +21,7 @@ use mqtt_stream::MqttStreamConfig;
 use terminal_stream::TerminalStreamConfig;
 use dummy_stream::DummyStreamConfig;
 
+pub const INTERNAL_STREAM_TICK_MS: u64 = 1; //Maximum internal TICK rate is 1000/HZ.
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum Direction {
@@ -178,7 +179,7 @@ impl StreamCore{
                 }
             }
 
-            thread::sleep(Duration::from_millis(10));
+            thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
         }));
 
         self.state = StreamState::Running;
@@ -201,14 +202,14 @@ impl Default for StreamConfig{
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Message {
-    pub timestamp: i64,
+    pub timestamp_ms: i64, // Number of milliseconds since EPOC.
     pub text: String,
 }
 
 impl Message {
     pub fn new(timestamp: i64, text: String) -> Message {
         Message {
-            timestamp,
+            timestamp_ms: timestamp,
             text,
         }
     }
