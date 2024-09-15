@@ -1,7 +1,9 @@
 use uuid::Uuid;
 use serde::{Deserialize, Serialize};
+use std::ptr::null;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::thread;
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 pub mod serial_stream;
 pub mod buffer_stream;
 pub mod file_stream;
@@ -73,52 +75,113 @@ pub enum StreamState {
 }
 
 #[derive(Debug)]
-pub struct StreamStatus{
-    pub is_initialized: bool,
+pub struct StreamCore{
     pub state: StreamState,
-    sender:Sender<Message>,
-    receiver:Receiver<Message>,
-    outputs: Vec<Sender<Message>>
 
+    // Receiving Messages from external Streams
+    external_input_sender: Sender<Message>,
+    external_input_receiver: Option<Receiver<Message>>,
+
+    // Sending Messages to external Streams.
+    external_output_senders: Option<Vec<Sender<Message>>>,
+
+    // Sending externally received Messages to the internal, specialised stream
+    internal_output_sender: Sender<Message>,
+    internal_output_receiver: Option<Receiver<Message>>,
+
+    // Receiving Messages generated from the internal, specialised stream.
+    internal_input_sender: Sender<Message>,
+    internal_input_receiver: Option<Receiver<Message>>,
+
+    thread_handle: Option<JoinHandle<()>>
 }
 
-impl StreamStatus{
-    pub fn new() -> StreamStatus{
-        let (tx,rx) = mpsc::channel();
-        let outputs:Vec<Sender<Message>> = vec![];
+impl StreamCore{
 
-        let thread_handle = thread::spawn(move || {
-            while let Ok(msg) = rx.recv() {
-                for output   in &outputs {
-                    output.send(msg.clone()).unwrap();
-                }
-            }
-        });
+    pub fn new() -> StreamCore {
+        let (tx_int_output, rx_int_output) = mpsc::channel::<Message>();
+        let (tx_int_input, rx_int_input) = mpsc::channel::<Message>();
+        let (tx_ext, rx_ext) = mpsc::channel::<Message>();
 
-        StreamStatus{
-            is_initialized: false, 
+        StreamCore {
             state: StreamState::Stopped,
-            sender: tx,
-            receiver: rx,
-            outputs: outputs
+            external_input_sender: tx_ext,
+            external_input_receiver: Some(rx_ext),
+            external_output_senders: Some(vec![]),
+            internal_output_sender: tx_int_output,
+            internal_output_receiver: Some(rx_int_output),
+            internal_input_sender: tx_int_input,
+            internal_input_receiver: Some(rx_int_input),
+            thread_handle: Option::None,
+        }
+    }
+
+    pub fn add_external_output(&mut self, sender: Sender<Message>) {
+        if let Some(outputs) = &mut self.external_output_senders {
+            outputs.push(sender);
+        }
+    }
+
+    pub fn add_external_outputs(&mut self, senders: Vec<Sender<Message>>) {
+        if let Some(outputs) = &mut self.external_output_senders {
+            outputs.append(&mut senders.clone());
         }
     }
     
-    pub fn get_tx_clone(&self) -> Sender<Message>{
-        self.sender.clone()
+    pub fn get_external_input_sender_clone(&self) -> Sender<Message>{
+        self.external_input_sender.clone()
     }
 
-    pub fn add_output_tx(&mut self, receiver: Sender<Message>){
-        self.outputs.push(receiver);
+    /**
+     * Used by the specialised stream to get a clone of the internal message sender.
+     */
+    pub fn get_internal_input_sender_clone(&self) -> Sender<Message>{
+        self.internal_input_sender.clone()
     }
 
-    pub fn initialise(&mut self){
-        if self.is_initialized {
-            todo!("Stream already initialised");
-        }
+    pub fn get_internal_output_receiver(&mut self) -> Receiver<Message>{
+        self.internal_output_receiver.take().expect("Internal output receiver unavailable")
+    }
 
-        
-        self.is_initialized = true;
+    pub fn start(&mut self) {
+        let ext_receiver: Receiver<Message> = self.external_input_receiver.take().expect("External receiver unavailable");
+        let int_receiver: Receiver<Message> = self.internal_input_receiver.take().expect("Internal receiver unavailable");
+        let ext_outputs: Vec<Sender<Message>> = self.external_output_senders.take().expect("Outputs unavailable");
+        let int_sender: Sender<Message> = self.internal_output_sender.clone();
+
+        println!("Starting core...");
+
+        self.thread_handle = Some(thread::spawn(move || loop {
+            // Handle Message received from other Streams
+            while let Ok(msg) = ext_receiver.try_recv() {
+                // First we filter the messages
+                // Todo
+                
+                // Next we forward the message to the external Streams.
+                for output in ext_outputs.iter() {
+                    // Forward the message to the external Streams
+                    output.send(msg.clone());
+                }
+
+                // Forward the message to the internal, specialised stream
+                int_sender.send(msg.clone());
+            }
+            
+            // Handle Messages received from the internal, specialised Stream
+            while let Ok(msg) = int_receiver.try_recv() {
+                // First we filter the messages
+                // Todo
+                
+                // Next we forward the message to external Streams
+                for output in ext_outputs.iter() {
+                    output.send(msg.clone()).unwrap();
+                }
+            }
+
+            thread::sleep(Duration::from_millis(10));
+        }));
+
+        self.state = StreamState::Running;
     }
 }
 
@@ -138,12 +201,12 @@ impl Default for StreamConfig{
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Message {
-    pub timestamp: u32,
+    pub timestamp: i64,
     pub text: String,
 }
 
 impl Message {
-    pub fn new(timestamp: u32, text: String) -> Message {
+    pub fn new(timestamp: i64, text: String) -> Message {
         Message {
             timestamp,
             text,
@@ -152,11 +215,14 @@ impl Message {
 }
 
 pub trait Stream {
-    fn start(&self) -> bool;
-    fn stop(&self) -> bool;
-    fn pause(&self) -> bool;
+    fn start(&mut self) -> bool;
+    fn stop(&mut self) -> bool;
+    fn pause(&mut self) -> bool;
     fn get_config(&self) -> &StreamConfig;
-    fn get_status(&self) -> &StreamStatus;
+    fn get_status(&self) -> &StreamCore;
+    fn get_uuid(&self) -> &Uuid;
+    fn add_output(&mut self, sender: Sender<Message>);
+    fn add_outputs(&mut self, senders: Vec<Sender<Message>>);
 }
 
 

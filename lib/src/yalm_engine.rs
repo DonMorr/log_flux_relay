@@ -1,8 +1,10 @@
-use std::fs;
+use std::sync::mpsc::Sender;
+use std::{fs, sync::mpsc::Receiver};
 use std::path::Path;
 use uuid::Uuid;
 
-use crate::stream::{buffer_stream::BufferStream, dummy_stream::DummyStream, serial_stream::SerialStream, Stream, StreamConfig, StreamTypeConfig};
+use crate::stream::Message;
+use crate::stream::{dummy_stream::DummyStream, Stream, StreamConfig, StreamTypeConfig};
 use super::yalm_config::YalmConfig;
 
 
@@ -19,18 +21,20 @@ impl YalmEngine {
         println!("Adding stream: {}", config_to_add.name);
 
         match config_to_add.type_config {
-            StreamTypeConfig::Serial { .. } => {
-                let stream = SerialStream::new(config_to_add).unwrap();
-                self.streams.push(Box::new(stream));
-            },
-            StreamTypeConfig::Buffer { .. } => {
-                let stream = BufferStream::new(config_to_add).unwrap();
-                self.streams.push(Box::new(stream));
-            },
+            // StreamTypeConfig::Serial { .. } => {
+            //     let stream = SerialStream::new(config_to_add).unwrap();
+            //     self.streams.push(Box::new(stream));
+            // },
+            // StreamTypeConfig::Buffer { .. } => {
+            //     let stream = BufferStream::new(config_to_add).unwrap();
+            //     self.streams.push(Box::new(stream));
+            // },
             StreamTypeConfig::Dummy { .. } => {
                 let stream = DummyStream::new(config_to_add).unwrap();
                 self.streams.push(Box::new(stream));
             },
+            StreamTypeConfig::Serial { .. } => todo!(),
+            StreamTypeConfig::Buffer { .. } => todo!(),
             StreamTypeConfig::Socket { config } => todo!(),
             StreamTypeConfig::File { config } => todo!(),
             StreamTypeConfig::Terminal { config } => todo!(),
@@ -98,37 +102,91 @@ impl YalmEngine {
 
         success
     }
-
-    
-    fn link_streams(&self){
-        for stream in self.streams.iter() {
-            let config: &StreamConfig = stream.get_config();
-            for output_stream_uuid in config.output_streams.iter(){
-                for stream_to_link in self.streams.iter() {
-                    if stream_to_link.get_config().uuid == *output_stream_uuid{
-                        stream.add_output_stream(stream_to_link);
-                    }
+    fn add_outputs_to_streams(&mut self, uuids_with_output_senders: Vec<(Uuid, Vec<Sender<Message>>)>) {
+        for stream in self.streams.iter_mut() {
+            for (uuid, senders) in uuids_with_output_senders.iter() {
+                if stream.get_uuid() == uuid {
+                    stream.add_outputs(senders.clone());
                 }
             }
         }
     }
     
-    fn start_streams(&self) -> bool {
-        let mut success: bool = true;
+    fn link_streams(&mut self) {
+        // Phase 1: Gather the UUIDs and senders (no mutable borrow yet)
+        let mut uuids_with_output_senders: Vec<(Uuid, Vec<Sender<Message>>)> = Vec::new();
+    
         for stream in self.streams.iter() {
-            if !stream.start(){
+            let config: &StreamConfig = stream.get_config();
+            let mut senders: Vec<Sender<Message>> = Vec::new();
+            
+            // Gather the output senders for each stream
+            for output_uuid in &config.output_streams {
+                for stream_inner in self.streams.iter() {
+                    if stream_inner.get_uuid() == output_uuid {
+                        senders.push(stream_inner.get_status().get_external_input_sender_clone());
+                    }
+                }
+            }
+    
+            // Store the collected UUID and associated senders
+            uuids_with_output_senders.push((stream.get_uuid().clone(), senders));
+        }
+    
+        // Phase 2: Mutate the streams (now we do the mutable borrow)
+        self.add_outputs_to_streams(uuids_with_output_senders);
+    }
+    
+    // fn add_outputs_to_streams(&mut self, uuids_with_output_senders: &Vec<(&Uuid, &Vec<Uuid>, Vec<Sender<Message>>)>){
+    //     for stream in self.streams.iter_mut() {
+    //         for output_cfg in uuids_with_output_senders.iter() {
+    //             if stream.get_uuid() == output_cfg.0 {
+    //                 stream.add_outputs(output_cfg.2.clone());
+    //             }
+    //         }
+    //     }
+    // }
+    
+    // fn link_streams(&mut self) {
+    //     let mut uuids_with_output_senders: Vec<(&Uuid, &Vec<Uuid>, Vec<Sender<Message>>)> = Vec::new();
+
+    //     for stream in self.streams.iter() {
+    //         let config: &StreamConfig = stream.get_config();
+    //         let uuid_with_senders: (&Uuid, &Vec<Uuid>, Vec<Sender<Message>>) = (stream.get_uuid(), &config.output_streams, Vec::new());
+    //         uuids_with_output_senders.push(uuid_with_senders);
+    //     }
+
+    //     for output_cfg in uuids_with_output_senders.iter_mut() {
+    //         for output_uuid in output_cfg.1 {
+    //             for stream in self.streams.iter() {
+    //                 if stream.get_uuid() == output_uuid {
+    //                     output_cfg.2.push(stream.get_status().get_external_input_sender_clone());
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     self.add_outputs_to_streams(&uuids_with_output_senders);
+    // }
+    
+    fn start_streams(&mut self) -> bool {
+        let mut success: bool = true;
+        for stream in self.streams.iter_mut() {
+            if !stream.start() {
                 success = false;
             }
         }
         success
     }
     
-    pub fn start(&self) -> bool {
+    pub fn start(&mut self) -> bool {
         let mut success: bool = true;
 
         if !self.is_valid(){
             success = false;
         }
+
+        self.link_streams();
 
         if !self.start_streams(){
             success = false;
