@@ -149,8 +149,6 @@ impl StreamCore{
         let ext_outputs: Vec<Sender<Message>> = self.external_output_senders.take().expect("Outputs unavailable");
         let int_sender: Sender<Message> = self.internal_output_sender.clone();
 
-        println!("Starting core...");
-
         self.thread_handle = Some(thread::spawn(move || loop {
             // Handle Message received from other Streams
             while let Ok(msg) = ext_receiver.try_recv() {
