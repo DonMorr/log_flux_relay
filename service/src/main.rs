@@ -86,7 +86,7 @@ fn main() {
     if engine.start() {
         println!("Engine successfully started");
 
-        thread::sleep(Duration::from_secs(300));
+        thread::sleep(Duration::from_secs(60*60));
 
         engine.stop();
     }
