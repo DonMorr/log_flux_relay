@@ -55,7 +55,7 @@ impl Stream for DummyStream {
             // Handle Message received from core
             while let Ok(msg) = receiver.try_recv() {
                 if prints_to_standard_out {
-                    println!("'{}' - DummyStream received Message: {} with timestamp: {}", stream_name, msg.text, msg.timestamp_ms);
+                    println!("'{}' - '{}' - '{}' - '{}'", stream_name, msg.timestamp_ms, msg.originator, msg.text);
                 }
             }
             
@@ -64,7 +64,7 @@ impl Stream for DummyStream {
 
                 if counter % message_generation_period_ms == 0 {
                     msg_counter += 1;
-                    let new_msg: Message = Message::new(Utc::now().timestamp_millis(), format!("New message {} from '{}'", msg_counter, stream_name));
+                    let new_msg: Message = Message::new(Utc::now().timestamp_millis(), stream_name.clone(), format!("New message {}", msg_counter));
                     
                     if prints_to_standard_out {
                         println!("'{}' - DummyStream generated new message: {} at time {}", stream_name, new_msg.text, new_msg.timestamp_ms);
@@ -81,9 +81,9 @@ impl Stream for DummyStream {
 
         true
     }
+    
     fn stop(&mut self) -> bool {
         todo!("Implement stop");
-        false
     }
 
     fn get_config(&self) -> &StreamConfig {

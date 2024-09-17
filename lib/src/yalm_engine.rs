@@ -3,6 +3,7 @@ use std::{fs, sync::mpsc::Receiver};
 use std::path::Path;
 use uuid::Uuid;
 
+use crate::stream::serial_stream::SerialStream;
 use crate::stream::Message;
 use crate::stream::{dummy_stream::DummyStream, Stream, StreamConfig, StreamTypeConfig};
 use super::yalm_config::YalmConfig;
@@ -33,7 +34,10 @@ impl YalmEngine {
                 let stream = DummyStream::new(config_to_add).unwrap();
                 self.streams.push(Box::new(stream));
             },
-            StreamTypeConfig::Serial { .. } => todo!(),
+            StreamTypeConfig::Serial { .. } => {
+                let stream: SerialStream = SerialStream::new(config_to_add).unwrap();
+                self.streams.push(Box::new(stream));
+            },
             StreamTypeConfig::Buffer { .. } => todo!(),
             StreamTypeConfig::Socket { config } => todo!(),
             StreamTypeConfig::File { config } => todo!(),

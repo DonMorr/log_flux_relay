@@ -1,7 +1,15 @@
-use std::sync::mpsc::{Sender, Receiver};
+use std::{io::{self, Read}, sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
+use chrono::Utc;
+use mio::{Events, Interest, Poll, Token};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+extern crate mio;
+extern crate mio_serial;
+use mio_serial::SerialPortBuilderExt;
 use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
-
+use crate::stream::INTERNAL_STREAM_TICK_MS;
+use std::str;
+const SERIAL_TOKEN: Token = Token(0);
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum FlowControl {
@@ -12,6 +20,7 @@ pub enum FlowControl {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct SerialStreamConfig {
+    // TODO - These may not be correct
     pub baud_rate: u32,
     pub port_path: String,
     pub start_bits: u8,
@@ -19,190 +28,175 @@ pub struct SerialStreamConfig {
     pub flow_control: FlowControl,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-// pub struct SerialStream {
-//     config: StreamConfig
-// }
+impl SerialStreamConfig {
+    pub fn new() -> Self {
+        SerialStreamConfig {
+            baud_rate: 9600,
+            port_path: String::from(""),
+            start_bits: 1,
+            stop_bits: 1,
+            flow_control: FlowControl::None(),
+        }
+    }
+}
 
-// impl Stream for SerialStream { 
-//     fn start(&self) -> bool {
-//         todo!("Implement start");
-//     }
+#[derive(Debug)]
+pub struct SerialStream {
+    core: StreamCore,
+    config: StreamConfig,
+    new_message_generated_sender: Sender<Message>,
+    new_message_received_receiver: Option<Receiver<Message>>,
+    thread_handle: Option<JoinHandle<()>>
+}
 
-//     fn stop(&self) -> bool {
-//         todo!("Implement stop");
-//     }
 
-//     fn pause(&self) -> bool {
-//         todo!("Implement pause");
-//     }
+impl Stream for SerialStream { 
+    fn start(&mut self) -> bool {
+        let stream_name = self.config.name.clone();
+        let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
+        let sender: Sender<Message> = self.new_message_generated_sender.clone();
+        let mut counter: u64 = 0;
+        let mut msg_counter: i32 = 0;
+        let path:String;
+        let baud_rate: u32;
+        let mut buf = [0u8; 10240];
+        let mut line_complete: bool = false;
+        let mut events = Events::with_capacity(1);
+        let mut poll = match Poll::new() {
+            Ok(poll) => poll,
+            Err(e) => panic!("failed to create Poll instance; err={:?}", e),
+        };
+        
+        println!("'{}' - SerialStream starting thread", stream_name);
 
-//     fn get_config(&self) -> &StreamConfig {
-//         &self.config
-//     }
+        if let StreamTypeConfig::Serial {config} = &self.config.type_config {
+            path = config.port_path.clone();
+            baud_rate = config.baud_rate;
+        }
+        else{
+            todo!("Handle this error");
+        }
 
-//     fn get_tx_clone(&self) -> &Sender<Message>{
-//         todo!("Implement get_sender");
-//     }
 
-//     fn set_receiver(&mut self, receiver: Receiver<Message>){
-//         todo!("Implement set_receiver");
-//     }
+        // Create a poll instance.
 
-//     fn get_status(&self) -> &StreamCore {
-//         todo!("Implement get_status");
-//     }
-// }
+        // Create the serial port
+        println!("Opening {} at {},8N1", path, baud_rate);
+        let mut rx = match mio_serial::new(path, baud_rate).open_native_async() {
+            Ok(rx) => rx,
+            Err(e) => panic!("failed to open serial port; err={:?}", e),
+        };
 
-// impl SerialStream {
-//     pub fn new(config: StreamConfig) -> Result<Self, &'static str> {
-//         if let StreamTypeConfig::Serial {..} = config.type_config {
-//             Ok(Self{config})
-//         }
-//         else{
-//             Err("Invalid type_config for a SerialStream")
-//         }
-//     }
-// }
+        poll.registry()
+            .register(&mut rx, SERIAL_TOKEN, Interest::READABLE)
+            .unwrap();
 
-// #[cfg(test)]
-// mod tests {
-//     use uuid::Uuid;
 
-//     use crate::stream::{DataType, Direction};
+        self.thread_handle = Some(thread::spawn(move || loop {
 
-//     use super::*;
+            // New message received from core.
+            while let Ok(msg) = receiver.try_recv() {
+                // TODO - write message to serial port.
+            }
+            
+            match poll.poll(&mut events, Some(Duration::from_millis(1))) {
+                Ok(poll) => poll,
+                Err(e) => panic!("failed to poll Poll instance; err={:?}", e),
+            };
 
-//     #[test]
-//     fn test_serial_stream_new_valid_config() {
-//         let uuid = Uuid::new_v4();
-//         let name = String::from("Test Serial Stream");
-//         let direction = Direction::Input;
-//         let data_type = DataType::Binary;
-//         let output_streams = vec![];
-//         let input_filter = String::new();
+            // Process each event.
+            for event in events.iter() {
+                match event.token() {
+                    SERIAL_TOKEN => loop {
+                        match rx.read(&mut buf) {
+                            Ok(count) => {
+                                let mut complete_lines: Vec<String> = vec![];
+                                let raw_string = String::from_utf8_lossy(&buf[..count]);
+                                
+                                line_complete = raw_string.ends_with('\n');
+    
+                                let mut it = raw_string.lines().peekable();
+    
+                                while let Some(line) = it.next()  {
+                                    // Is it the last line?
+                                    if it.peek().is_none() {
+                                        if line_complete {
+                                            complete_lines.push(String::from(line));
+                                        }
+                                    }
+                                    else{
+                                        complete_lines.push(String::from(line));
+                                    }
+                                }
 
-//         let serial_config = SerialStreamConfig {
-//             baud_rate: 9600,
-//             port_path: String::from("/dev/ttyUSB0"),
-//             start_bits: 1,
-//             stop_bits: 1,
-//             flow_control: FlowControl::None(),
-//         };
-//         let type_config = StreamTypeConfig::Serial{config: serial_config};
+                                for line in complete_lines {
+                                    let new_msg: Message = Message::new(Utc::now().timestamp_millis(), stream_name.clone(), line);
+                                    sender.send(new_msg);
+                                }
+                            }
+                            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                                break;
+                            }
+                            Err(e) => {
+                                print!("Quitting due to read error: {}", e);
+    
+                            }
+                        }
+                    },
+                    _ => {
+                        // This should never happen as we only registered our
+                        // `UdpSocket` using the `UDP_SOCKET` token, but if it ever
+                        // does we'll log it.
+                        // warn!("Got event for unexpected token: {:?}", event);
+                    }
+                }
+            }
+        }));
 
-//         let stream_config = StreamConfig::new(
-//             uuid,
-//             name,
-//             direction,
-//             data_type,
-//             output_streams,
-//             input_filter,
-//             type_config,
-//         );
+        self.core.start();
 
-//         let result = SerialStream::new(stream_config);
-//         assert!(result.is_ok());
-//     }
+        true
+    }
 
-//     #[test]
-//     fn test_serial_stream_new_invalid_config() {
-//         let uuid = Uuid::new_v4();
-//         let name = String::from("Test Invalid Stream");
-//         let direction = Direction::Input;
-//         let data_type = DataType::Binary;
-//         let output_streams = vec![];
-//         let input_filter = String::new();
-//         let type_config = StreamTypeConfig::None;
+    fn stop(&mut self) -> bool {
+        todo!("Implement stop");
+    }
 
-//         let stream_config = StreamConfig::new(
-//             uuid,
-//             name,
-//             direction,
-//             data_type,
-//             output_streams,
-//             input_filter,
-//             type_config,
-//         );
+    fn get_config(&self) -> &StreamConfig {
+        &self.config
+    }
 
-//         let result = SerialStream::new(stream_config);
-//         assert!(result.is_err());
-//         assert_eq!(result.unwrap_err(), "Invalid type_config for a SerialStream");
-//     }
+    fn get_status(&self) -> &StreamCore {
+        &self.core
+    }
 
-//     #[test]
-//     fn test_serial_stream_get_info() {
-//         let uuid = Uuid::new_v4();
-//         let name = String::from("Test Serial Stream");
-//         let direction = Direction::Output;
-//         let data_type = DataType::Ascii;
-//         let output_streams = vec![Uuid::new_v4()];
-//         let input_filter = String::from("test_filter");
-//         let serial_config = SerialStreamConfig {
-//             baud_rate: 115200,
-//             port_path: String::from("/dev/ttyUSB1"),
-//             start_bits: 1,
-//             stop_bits: 2,
-//             flow_control: FlowControl::XonXoff,
-//         };
-//         let type_config = StreamTypeConfig::Serial{config: serial_config};
+    fn get_uuid(&self) -> &Uuid{
+        &self.config.uuid
+    }
 
-//         let stream_config = StreamConfig::new(
-//             uuid,
-//             name.clone(),
-//             direction,
-//             data_type,
-//             output_streams.clone(),
-//             input_filter.clone(),
-//             type_config,
-//         );
+    fn add_output(&mut self, receiver: Sender<Message>){
+        self.core.add_external_output(receiver);
+    }
 
-//         let serial_stream = SerialStream::new(stream_config).unwrap();
-//         let info = serial_stream.get_config();
+    fn add_outputs(&mut self, senders: Vec<Sender<Message>>){
+        self.core.add_external_outputs(senders);
+    }
+}
 
-//         assert_eq!(info.uuid, uuid);
-//         assert_eq!(info.name, name);
-//         assert_eq!(info.direction, Direction::Output);
-//         assert_eq!(info.data_type, DataType::Ascii);
-//         assert_eq!(info.output_streams, output_streams);
-//         assert_eq!(info.input_filter, input_filter);
-//         assert!(matches!(info.type_config, StreamTypeConfig::Serial { .. }));
-//     }
-
-//     #[test]
-//     fn test_flow_control_variants() {
-//         assert_ne!(FlowControl::None(), FlowControl::XonXoff);
-//         assert_ne!(FlowControl::None(), FlowControl::Etc);
-//         assert_ne!(FlowControl::XonXoff, FlowControl::Etc);
-//     }
-
-//     #[test]
-//     fn test_serial_stream_config_equality() {
-//         let config1 = SerialStreamConfig {
-//             baud_rate: 9600,
-//             port_path: String::from("/dev/ttyUSB0"),
-//             start_bits: 1,
-//             stop_bits: 1,
-//             flow_control: FlowControl::None(),
-//         };
-
-//         let config2 = SerialStreamConfig {
-//             baud_rate: 9600,
-//             port_path: String::from("/dev/ttyUSB0"),
-//             start_bits: 1,
-//             stop_bits: 1,
-//             flow_control: FlowControl::None(),
-//         };
-
-//         let config3 = SerialStreamConfig {
-//             baud_rate: 115200,
-//             port_path: String::from("/dev/ttyUSB1"),
-//             start_bits: 1,
-//             stop_bits: 2,
-//             flow_control: FlowControl::XonXoff,
-//         };
-
-//         assert_eq!(config1, config2);
-//         assert_ne!(config1, config3);
-//     }
-// }
+impl SerialStream {
+    pub fn new(config: StreamConfig) -> Result<Self, &'static str> {
+        if let StreamTypeConfig::Serial {..} = config.type_config {
+            let mut core = StreamCore::new();
+            Ok(Self{
+                config:config,
+                new_message_generated_sender: core.get_internal_input_sender_clone(),
+                new_message_received_receiver: Some(core.get_internal_output_receiver()),
+                core: core,
+                thread_handle: None
+            })
+        }
+        else{
+            Err("Invalid type_config for a SerialStream")
+        }
+    }
+}

@@ -56,13 +56,14 @@ pub struct StreamConfig {
     pub data_type: DataType,
     pub output_streams: Vec<Uuid>,
     pub input_filter: String,
-    pub type_config: StreamTypeConfig
+    pub type_config: StreamTypeConfig,
+    pub message_delimiter:String,
 }
 
 impl StreamConfig {
-    pub fn new(uuid: Uuid, name: String, direction:Direction, data_type: DataType, output_streams: Vec<Uuid>, input_filter: String, config:StreamTypeConfig) -> StreamConfig{
+    pub fn new(uuid: Uuid, name: String, direction:Direction, data_type: DataType, output_streams: Vec<Uuid>, input_filter: String, config:StreamTypeConfig, message_delimiter:String) -> StreamConfig{
         StreamConfig{
-            uuid, name, direction, data_type, output_streams, input_filter, type_config: config
+            uuid, name, direction, data_type, output_streams, input_filter, type_config: config, message_delimiter: message_delimiter
         }
     }
 }
@@ -194,7 +195,8 @@ impl Default for StreamConfig{
             data_type: DataType::Ascii,
             output_streams: vec![],
             input_filter: String::from(""),
-            type_config: StreamTypeConfig::None
+            type_config: StreamTypeConfig::None,
+            message_delimiter: String::from("\n")
         }
     }
 }
@@ -202,13 +204,15 @@ impl Default for StreamConfig{
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Message {
     pub timestamp_ms: i64, // Number of milliseconds since EPOC.
+    pub originator: String,
     pub text: String,
 }
 
 impl Message {
-    pub fn new(timestamp: i64, text: String) -> Message {
+    pub fn new(timestamp: i64, originator: String, text: String) -> Message {
         Message {
             timestamp_ms: timestamp,
+            originator,
             text,
         }
     }
