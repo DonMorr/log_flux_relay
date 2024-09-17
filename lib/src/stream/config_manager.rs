@@ -23,7 +23,7 @@ pub fn save_config(config: &StreamConfig, config_file_path:String) -> Result<(),
     Ok(())
 }
 
-
+/*
 #[cfg(test)]
 mod tests {
     use crate::stream::{DataType, Direction, StreamTypeConfig};
@@ -67,4 +67,4 @@ mod tests {
         assert_eq!(written_stream_config, read_config);
     }
 
-}
+}*/

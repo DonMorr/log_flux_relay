@@ -1,5 +1,6 @@
 use std::{sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
 use chrono::prelude::*;
+use chrono::{Utc, Local, TimeZone};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::stream::INTERNAL_STREAM_TICK_MS;
@@ -55,7 +56,12 @@ impl Stream for DummyStream {
             // Handle Message received from core
             while let Ok(msg) = receiver.try_recv() {
                 if prints_to_standard_out {
-                    println!("'{}' - '{}' - '{}' - '{}'", stream_name, msg.timestamp_ms, msg.originator, msg.text);
+                    let datetime = Local.timestamp_millis_opt(msg.timestamp_ms);
+                    let formatted_datetime = datetime.single().map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()).unwrap_or_else(|| "Invalid timestamp".to_string());
+                    let ms = msg.timestamp_ms%1000;
+                    let originator = msg.originator;
+                    let text = msg.text;
+                    println!("'{stream_name}' - {formatted_datetime}:{ms:0>3} - '{originator}' - '{text}'");
                 }
             }
             
@@ -81,7 +87,6 @@ impl Stream for DummyStream {
 
         true
     }
-    
     fn stop(&mut self) -> bool {
         todo!("Implement stop");
     }

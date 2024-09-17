@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use lib::{stream::{dummy_stream::DummyStreamConfig, serial_stream::{FlowControl, SerialStream, SerialStreamConfig}, Direction, StreamConfig, StreamTypeConfig}, yalm_engine::YalmEngine};
+use lib::{stream::{dummy_stream::DummyStreamConfig, serial_stream::{FlowControl, SerialStreamConfig}, Direction, StreamConfig, StreamTypeConfig}, yalm_engine::YalmEngine};
 
 
 

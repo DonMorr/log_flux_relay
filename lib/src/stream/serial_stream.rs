@@ -7,7 +7,7 @@ extern crate mio;
 extern crate mio_serial;
 use mio_serial::SerialPortBuilderExt;
 use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
-use crate::stream::INTERNAL_STREAM_TICK_MS;
+use crate::{log_flux_relay::process_raw_log_entry, stream::INTERNAL_STREAM_TICK_MS};
 use std::str;
 const SERIAL_TOKEN: Token = Token(0);
 
@@ -61,6 +61,7 @@ impl Stream for SerialStream {
         let baud_rate: u32;
         let mut buf = [0u8; 10240];
         let mut line_complete: bool = false;
+        let mut last_partial_line: String = String::new();
         let mut events = Events::with_capacity(1);
         let mut poll = match Poll::new() {
             Ok(poll) => poll,
@@ -96,7 +97,7 @@ impl Stream for SerialStream {
 
             // New message received from core.
             while let Ok(msg) = receiver.try_recv() {
-                // TODO - write message to serial port.
+                todo!("write message to serial port");
             }
             
             match poll.poll(&mut events, Some(Duration::from_millis(1))) {
@@ -110,24 +111,10 @@ impl Stream for SerialStream {
                     SERIAL_TOKEN => loop {
                         match rx.read(&mut buf) {
                             Ok(count) => {
-                                let mut complete_lines: Vec<String> = vec![];
                                 let raw_string = String::from_utf8_lossy(&buf[..count]);
                                 
-                                line_complete = raw_string.ends_with('\n');
-    
-                                let mut it = raw_string.lines().peekable();
-    
-                                while let Some(line) = it.next()  {
-                                    // Is it the last line?
-                                    if it.peek().is_none() {
-                                        if line_complete {
-                                            complete_lines.push(String::from(line));
-                                        }
-                                    }
-                                    else{
-                                        complete_lines.push(String::from(line));
-                                    }
-                                }
+                                let (complete_lines,partial_line) = process_raw_log_entry(raw_string.to_string(), last_partial_line);
+                                last_partial_line = partial_line;
 
                                 for line in complete_lines {
                                     let new_msg: Message = Message::new(Utc::now().timestamp_millis(), stream_name.clone(), line);

@@ -37,15 +37,11 @@ pub mod log_flux_relay{
 
 }
 
-/*
+
 #[cfg(test)]
 mod tests {
 
-    use uuid::Uuid;
-
-    use crate::common::stream::{DataType, Direction, FileConfig, FlowControl, SerialConfiguration, SocketConfiguration, Stream, StreamInfo};
-    use crate::common::relay_config::RelayConfig;
-    use crate::log_flux_relay::process_raw_log_entry;
+    use crate::{log_flux_relay::process_raw_log_entry};
 
     #[test]
     fn process_raw_log_entry_test_simple_log(){
@@ -118,56 +114,4 @@ mod tests {
         assert!(expected_lines == lines);
         assert!(expected_partial_line == partial_line);
     }
-
-    #[test]
-    fn it_works() {
-        let serial_config:SerialConfiguration = SerialConfiguration {
-            baud_rate: 9600,
-            port_path: String::from("/dev/ttyUSB0"),
-            start_bits: 1,
-            stop_bits: 1,
-            flow_control: FlowControl::XonXoff,
-        };
-
-        let sock_config: SocketConfiguration = SocketConfiguration{
-            ip_address: String::from("192.168.9.1"),
-            port: 5693
-        };
-
-        let file_config_1: FileConfig = FileConfig {
-            file_name: String::from("test_file_1.txt")
-        };
-
-        let file_config_2: FileConfig = FileConfig {
-            file_name: String::from("test_file_2.txt")
-        };
-
-        let mut config: RelayConfig = RelayConfig{
-            streams: vec![],
-        };
-
-        let serial_info: StreamInfo = StreamInfo{
-            uuid: Uuid::new_v4(),
-            name: String::from("A Serial Stream"),
-            direction: Direction::Input,
-            data_type: DataType::Ascii,
-            output_streams: Vec::new(),
-            input_filter: String::from("*")
-        };
-        let socket_info: StreamInfo = StreamInfo{
-            uuid: Uuid::new_v4(),
-            name: String::from("A Socket Stream"),
-            direction: Direction::Input,
-            data_type: DataType::Binary,
-            output_streams: Vec::new(),
-            input_filter: String::from("*")
-        };
-
-        config.streams.push(Stream::Serial { config: serial_config, info: serial_info });
-        config.streams.push(Stream::Socket { config: sock_config, info: socket_info });
-
-        println!("Config: {}", serde_json::to_string(&config).unwrap());
-        
-    }
 }
-*/
