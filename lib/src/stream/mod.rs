@@ -1,6 +1,5 @@
 use uuid::Uuid;
 use serde::{Deserialize, Serialize};
-use std::ptr::null;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;

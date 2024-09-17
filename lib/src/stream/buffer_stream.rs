@@ -1,7 +1,5 @@
 
-use std::sync::mpsc::{Sender, Receiver};
 use serde::{Deserialize, Serialize};
-use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct BufferStreamConfig {

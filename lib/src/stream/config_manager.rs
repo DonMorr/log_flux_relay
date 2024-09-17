@@ -1,9 +1,7 @@
-use serde::{Deserialize, Serialize};
-use super::{Stream, StreamConfig};
+use super::StreamConfig;
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io::BufReader;
-use std::io::{Write, Read};
 
 pub fn load_config(config_file_path:String) -> Result<StreamConfig, Box<dyn Error>>{
     let file = File::open(config_file_path)?;

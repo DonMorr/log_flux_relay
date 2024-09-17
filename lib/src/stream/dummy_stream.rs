@@ -1,5 +1,4 @@
 use std::{sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
-use chrono::prelude::*;
 use chrono::{Utc, Local, TimeZone};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

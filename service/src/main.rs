@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use lib::{stream::{dummy_stream::DummyStreamConfig, serial_stream::{FlowControl, SerialStreamConfig}, Direction, StreamConfig, StreamTypeConfig}, yalm_engine::YalmEngine};
+use lib::{stream::{dummy_stream::DummyStreamConfig, file_stream::{self, FileStreamConfig}, serial_stream::{FlowControl, SerialStreamConfig}, Direction, StreamConfig, StreamTypeConfig}, yalm_engine::YalmEngine};
 
 
 
@@ -58,18 +58,26 @@ fn main() {
     source_stream_2_config.type_config = StreamTypeConfig::Serial { config:serial_stream_2_config };
 
     let dummy_stream_config_con: DummyStreamConfig = DummyStreamConfig::new();
-    let mut output_stream_config: StreamConfig = StreamConfig::default();
-    output_stream_config.name = String::from("Consumer A");
-    output_stream_config.direction = Direction::Input;
-    output_stream_config.type_config = StreamTypeConfig::Dummy { config:dummy_stream_config_con };
+    let mut output_dummy_stream_config: StreamConfig = StreamConfig::default();
+    output_dummy_stream_config.name = String::from("Dummy Stream A");
+    output_dummy_stream_config.direction = Direction::Input;
+    output_dummy_stream_config.type_config = StreamTypeConfig::Dummy { config:dummy_stream_config_con };
 
-    source_stream_1_config.output_streams.push(output_stream_config.uuid.clone());
-    source_stream_2_config.output_streams.push(output_stream_config.uuid.clone());
+    let file_stream_config: FileStreamConfig = FileStreamConfig::new(String::from("simple_text.txt"));
+    let mut output_file_stream_config: StreamConfig = StreamConfig::default();
+    output_file_stream_config.name = String::from("File Writer A");
+    output_file_stream_config.direction = Direction::Output;
+    output_file_stream_config.type_config = StreamTypeConfig::File { config:file_stream_config };
+
+    source_stream_1_config.output_streams.push(output_dummy_stream_config.uuid.clone());
+    source_stream_2_config.output_streams.push(output_dummy_stream_config.uuid.clone());
+    output_dummy_stream_config.output_streams.push(output_file_stream_config.uuid.clone());
 
     let mut engine: YalmEngine = YalmEngine::new();
     engine.add_stream(source_stream_1_config);
     engine.add_stream(source_stream_2_config);
-    engine.add_stream(output_stream_config);
+    engine.add_stream(output_file_stream_config);
+    engine.add_stream(output_dummy_stream_config);
 
     if engine.initialise(){
         println!("Engine successfully initialised");
@@ -77,7 +85,10 @@ fn main() {
 
     if engine.start() {
         println!("Engine successfully started");
+
         thread::sleep(Duration::from_secs(300));
+
+        engine.stop();
     }
     else {
         println!("Failed to start, validation failed");

@@ -100,7 +100,7 @@ impl Stream for SerialStream {
                 todo!("write message to serial port");
             }
             
-            match poll.poll(&mut events, Some(Duration::from_millis(1))) {
+            match poll.poll(&mut events, Some(Duration::from_millis(INTERNAL_STREAM_TICK_MS))) {
                 Ok(poll) => poll,
                 Err(e) => panic!("failed to poll Poll instance; err={:?}", e),
             };

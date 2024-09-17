@@ -3,6 +3,7 @@ use std::{fs, sync::mpsc::Receiver};
 use std::path::Path;
 use uuid::Uuid;
 
+use crate::stream::file_stream::FileStream;
 use crate::stream::serial_stream::SerialStream;
 use crate::stream::Message;
 use crate::stream::{dummy_stream::DummyStream, Stream, StreamConfig, StreamTypeConfig};
@@ -38,9 +39,12 @@ impl YalmEngine {
                 let stream: SerialStream = SerialStream::new(config_to_add).unwrap();
                 self.streams.push(Box::new(stream));
             },
+            StreamTypeConfig::File { .. } =>  {
+                let stream: FileStream = FileStream::new(config_to_add).unwrap();
+                self.streams.push(Box::new(stream));
+            },
             StreamTypeConfig::Buffer { .. } => todo!(),
             StreamTypeConfig::Socket { config } => todo!(),
-            StreamTypeConfig::File { config } => todo!(),
             StreamTypeConfig::Terminal { config } => todo!(),
             StreamTypeConfig::Mqtt { config } => todo!(),
             StreamTypeConfig::None => todo!(),
@@ -206,7 +210,7 @@ impl YalmEngine {
     }
 
     pub fn stop(&self) {
-        println!("YalmEngine stopped.");
+        todo!("Need to implement a safe stop of the engine and the various streams.")
     }
 
 }
