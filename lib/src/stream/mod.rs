@@ -11,6 +11,7 @@ pub mod mqtt_stream;
 pub mod terminal_stream;
 pub mod config_manager;
 pub mod dummy_stream;
+pub mod udp_stream;
 
 use serial_stream::SerialStreamConfig;
 use buffer_stream::BufferStreamConfig;
@@ -19,6 +20,7 @@ use socket_stream::SocketStreamConfiguration;
 use mqtt_stream::MqttStreamConfig;
 use terminal_stream::TerminalStreamConfig;
 use dummy_stream::DummyStreamConfig;
+use udp_stream::UdpStreamConfig;
 
 pub const INTERNAL_STREAM_TICK_MS: u64 = 10; //Maximum internal TICK rate is 1000/HZ.
 
@@ -44,6 +46,7 @@ pub enum StreamTypeConfig {
     Mqtt{config: MqttStreamConfig},
     Buffer{config: BufferStreamConfig},
     Dummy{config: DummyStreamConfig},
+    Udp{config: UdpStreamConfig},
     None
 }
 

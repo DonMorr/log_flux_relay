@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use crate::stream::file_stream::FileStream;
 use crate::stream::serial_stream::SerialStream;
+use crate::stream::udp_stream::UdpStream;
 use crate::stream::Message;
 use crate::stream::{dummy_stream::DummyStream, Stream, StreamConfig, StreamTypeConfig};
 use super::yalm_config::YalmConfig;
@@ -41,6 +42,10 @@ impl YalmEngine {
             },
             StreamTypeConfig::File { .. } =>  {
                 let stream: FileStream = FileStream::new(config_to_add).unwrap();
+                self.streams.push(Box::new(stream));
+            },
+            StreamTypeConfig::Udp { .. } =>  {
+                let stream: UdpStream = UdpStream::new(config_to_add).unwrap();
                 self.streams.push(Box::new(stream));
             },
             StreamTypeConfig::Buffer { .. } => todo!(),
