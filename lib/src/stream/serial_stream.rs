@@ -7,7 +7,7 @@ extern crate mio;
 extern crate mio_serial;
 use mio_serial::SerialPortBuilderExt;
 use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
-use crate::{log_flux_relay::process_raw_log_entry, stream::INTERNAL_STREAM_TICK_MS};
+use crate::{stream::INTERNAL_STREAM_TICK_MS, tools::stream_tools::process_raw_log_entry};
 use std::str;
 const SERIAL_TOKEN: Token = Token(0);
 
@@ -51,7 +51,7 @@ pub struct SerialStream {
 
 
 impl Stream for SerialStream { 
-    fn start(&mut self) -> bool {
+    fn start(&mut self) -> Result<(), String> {
         let stream_name = self.config.name.clone();
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let sender: Sender<Message> = self.new_message_generated_sender.clone();
@@ -142,10 +142,10 @@ impl Stream for SerialStream {
 
         self.core.start();
 
-        true
+        todo!()
     }
 
-    fn stop(&mut self) -> bool {
+    fn stop(&mut self) -> Result<(), String> {
         todo!("Implement stop");
     }
 

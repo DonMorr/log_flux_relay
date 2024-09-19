@@ -3,51 +3,48 @@ use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
+use core::fmt;
 pub mod serial_stream;
 pub mod file_stream;
 pub mod mqtt_stream;
-pub mod dummy_stream;
+pub mod terminal_stream;
 pub mod udp_stream;
 
 use serial_stream::SerialStreamConfig;
 use file_stream::FileStreamConfig;
 use mqtt_stream::MqttStreamConfig;
-use dummy_stream::DummyStreamConfig;
+use terminal_stream::TerminalStreamConfig;
 use udp_stream::UdpStreamConfig;
 
 pub const INTERNAL_STREAM_TICK_MS: u64 = 10; //Maximum internal TICK rate is 1000/HZ.
-
-// TODO: remove
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum Direction {
-    Input,
-    Output,
-    BiDirectional,
-}
-
-// TODO: remove
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub enum DataType {
-    Ascii,
-    Binary,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum StreamTypeConfig {
     Serial{config: SerialStreamConfig},
     File{config: FileStreamConfig},
     Mqtt{config: MqttStreamConfig},
-    Dummy{config: DummyStreamConfig},
+    Terminal{config: TerminalStreamConfig},
     Udp{config: UdpStreamConfig},
     None
+}
+
+impl fmt::Display for StreamTypeConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StreamTypeConfig::Serial{..} => write!(f, "Serial"),
+            StreamTypeConfig::File{..} => write!(f, "File"),
+            StreamTypeConfig::Mqtt{..} => write!(f, "Mqtt"),
+            StreamTypeConfig::Terminal{..} => write!(f, "Terminal"),
+            StreamTypeConfig::Udp{..} => write!(f, "Udp"),
+            StreamTypeConfig::None => write!(f, "None")
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct StreamConfig {
     pub uuid: Uuid,
     pub name: String,
-    pub direction: Direction,
-    pub data_type: DataType,
     pub output_streams: Vec<Uuid>,
     pub input_filter: String,
     pub type_config: StreamTypeConfig,
@@ -55,9 +52,9 @@ pub struct StreamConfig {
 }
 
 impl StreamConfig {
-    pub fn new(uuid: Uuid, name: String, direction:Direction, data_type: DataType, output_streams: Vec<Uuid>, input_filter: String, config:StreamTypeConfig, message_delimiter:String) -> StreamConfig{
+    pub fn new(uuid: Uuid, name: String, output_streams: Vec<Uuid>, input_filter: String, config:StreamTypeConfig, message_delimiter:String) -> StreamConfig{
         StreamConfig{
-            uuid, name, direction, data_type, output_streams, input_filter, type_config: config, message_delimiter: message_delimiter
+            uuid, name, output_streams, input_filter, type_config: config, message_delimiter: message_delimiter
         }
     }
 }
@@ -183,8 +180,6 @@ impl Default for StreamConfig{
         Self {
             uuid: Uuid::new_v4(),
             name: String::from(""),
-            direction: Direction::Input,
-            data_type: DataType::Ascii,
             output_streams: vec![],
             input_filter: String::from(""),
             type_config: StreamTypeConfig::None,
@@ -211,8 +206,8 @@ impl Message {
 }
 
 pub trait Stream {
-    fn start(&mut self) -> bool;
-    fn stop(&mut self) -> bool;
+    fn start(&mut self) -> Result<(), String>;
+    fn stop(&mut self) -> Result<(), String>;
     fn get_config(&self) -> &StreamConfig;
     fn get_status(&self) -> &StreamCore;
     fn get_uuid(&self) -> &Uuid;

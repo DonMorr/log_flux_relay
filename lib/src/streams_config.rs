@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct YalmConfig {
+pub struct StreamsConfig {
     pub stream_configs: Vec<crate::stream::StreamConfig>
 }
 
-impl YalmConfig{
+impl StreamsConfig{
     pub fn new() -> Self {
-        YalmConfig {
+        StreamsConfig {
             stream_configs: Vec::new()
         }
     }

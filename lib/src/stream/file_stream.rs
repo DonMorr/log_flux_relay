@@ -30,7 +30,7 @@ pub struct FileStream {
 
 impl Stream for FileStream {
 
-    fn start(&mut self) -> bool {
+    fn start(&mut self) -> Result<(), String> {
         let stream_name = self.config.name.clone();
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let file_path: String;
@@ -74,9 +74,9 @@ impl Stream for FileStream {
         }));
 
         self.core.start();
-        true
+        todo!("Implement start");
     }
-    fn stop(&mut self) -> bool {
+    fn stop(&mut self) -> Result<(), String> {
         todo!("Implement stop");
     }
 

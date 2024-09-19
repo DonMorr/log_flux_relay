@@ -33,7 +33,7 @@ pub struct UdpStream {
 
 impl Stream for UdpStream {
 
-    fn start(&mut self) -> bool {
+    fn start(&mut self) -> Result<(), String> {
         let stream_name = self.config.name.clone();
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let sender: Sender<Message> = self.new_message_generated_sender.clone();
@@ -102,9 +102,10 @@ impl Stream for UdpStream {
 
         self.core.start();
 
-        true
+        todo!()
     }
-    fn stop(&mut self) -> bool {
+
+    fn stop(&mut self) -> Result<(), String> {
         todo!("Implement stop");
     }
 
