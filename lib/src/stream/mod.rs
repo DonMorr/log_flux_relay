@@ -4,6 +4,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 use core::fmt;
+
 pub mod serial_stream;
 pub mod file_stream;
 pub mod mqtt_stream;
@@ -15,6 +16,8 @@ use file_stream::FileStreamConfig;
 use mqtt_stream::MqttStreamConfig;
 use terminal_stream::TerminalStreamConfig;
 use udp_stream::UdpStreamConfig;
+
+use crate::message::Message;
 
 pub const INTERNAL_STREAM_TICK_MS: u64 = 10; //Maximum internal TICK rate is 1000/HZ.
 
@@ -61,9 +64,10 @@ impl StreamConfig {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum StreamState {
-    Stopped,
-    Running,
-    Paused
+    Initialised,
+    Started,
+    Paused,
+    Ended
 }
 
 #[derive(Debug)]
@@ -96,7 +100,7 @@ impl StreamCore{
         let (tx_ext, rx_ext) = mpsc::channel::<Message>();
 
         StreamCore {
-            state: StreamState::Stopped,
+            state: StreamState::Initialised,
             external_input_sender: tx_ext,
             external_input_receiver: Some(rx_ext),
             external_output_senders: Some(vec![]),
@@ -108,15 +112,21 @@ impl StreamCore{
         }
     }
 
-    pub fn add_external_output(&mut self, sender: Sender<Message>) {
+    pub fn add_external_output(&mut self, sender: Sender<Message>) -> Result<(), String> {
         if let Some(outputs) = &mut self.external_output_senders {
             outputs.push(sender);
+            Ok(())
+        } else {
+            Err("External output senders not available".to_string())
         }
     }
 
-    pub fn add_external_outputs(&mut self, senders: Vec<Sender<Message>>) {
+    pub fn add_external_outputs(&mut self, senders: Vec<Sender<Message>>) -> Result<(), String> {
         if let Some(outputs) = &mut self.external_output_senders {
             outputs.append(&mut senders.clone());
+            Ok(())
+        } else {
+            Err("External output senders not available".to_string())
         }
     }
     
@@ -135,10 +145,15 @@ impl StreamCore{
         self.internal_output_receiver.take().expect("Internal output receiver unavailable")
     }
 
-    pub fn start(&mut self) {
-        let ext_receiver: Receiver<Message> = self.external_input_receiver.take().expect("External receiver unavailable");
-        let int_receiver: Receiver<Message> = self.internal_input_receiver.take().expect("Internal receiver unavailable");
-        let ext_outputs: Vec<Sender<Message>> = self.external_output_senders.take().expect("Outputs unavailable");
+    pub fn start(&mut self) -> Result<(), String> {
+
+        if self.state != StreamState::Initialised {
+            return Err(String::from("Stream not in correct state to start"))
+        }
+
+        let ext_receiver: Receiver<Message> = self.external_input_receiver.take().ok_or("External input receiver unavailable")?;
+        let int_receiver: Receiver<Message> = self.internal_input_receiver.take().ok_or("Internal input receiver unavailable")?;
+        let ext_outputs: Vec<Sender<Message>> = self.external_output_senders.take().ok_or("External output senders unavailable")?;
         let int_sender: Sender<Message> = self.internal_output_sender.clone();
 
         self.thread_handle = Some(thread::spawn(move || loop {
@@ -150,11 +165,13 @@ impl StreamCore{
                 // Next we forward the message to the external Streams.
                 for output in ext_outputs.iter() {
                     // Forward the message to the external Streams
-                    output.send(msg.clone());
+                    // TODO - handle errors here?
+                    let _ = output.send(msg.clone());
                 }
 
                 // Forward the message to the internal, specialised stream
-                int_sender.send(msg.clone());
+                    // TODO - handle errors here?
+                let _ = int_sender.send(msg.clone());
             }
             
             // Handle Messages received from the internal, specialised Stream
@@ -164,14 +181,20 @@ impl StreamCore{
                 
                 // Next we forward the message to external Streams
                 for output in ext_outputs.iter() {
-                    output.send(msg.clone()).unwrap();
+                    // TODO - not sure if we need to clone the message?
+                    // TODO - not sure how we return an error here?
+                    let _ = output.send(msg.clone());
                 }
             }
 
             thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
         }));
 
-        self.state = StreamState::Running;
+        self.state = StreamState::Started;
+        Ok(())
+    }
+    pub fn stop(&mut self) -> Result<(), String> {
+        todo!("Implement stop")
     }
 }
 
@@ -188,29 +211,12 @@ impl Default for StreamConfig{
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct Message {
-    pub timestamp_ms: i64, // Number of milliseconds since EPOC.
-    pub originator: String,
-    pub text: String,
-}
-
-impl Message {
-    pub fn new(timestamp: i64, originator: String, text: String) -> Message {
-        Message {
-            timestamp_ms: timestamp,
-            originator,
-            text,
-        }
-    }
-}
-
 pub trait Stream {
     fn start(&mut self) -> Result<(), String>;
     fn stop(&mut self) -> Result<(), String>;
     fn get_config(&self) -> &StreamConfig;
     fn get_status(&self) -> &StreamCore;
     fn get_uuid(&self) -> &Uuid;
-    fn add_output(&mut self, sender: Sender<Message>);
-    fn add_outputs(&mut self, senders: Vec<Sender<Message>>);
+    fn add_output(&mut self, sender: Sender<Message>) -> Result<(), String>;
+    fn add_outputs(&mut self, senders: Vec<Sender<Message>>) -> Result<(), String>;
 }

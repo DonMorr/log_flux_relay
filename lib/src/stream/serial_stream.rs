@@ -140,9 +140,9 @@ impl Stream for SerialStream {
             }
         }));
 
-        self.core.start();
+        self.core.start()?;
 
-        todo!()
+        Ok(())
     }
 
     fn stop(&mut self) -> Result<(), String> {
@@ -161,12 +161,12 @@ impl Stream for SerialStream {
         &self.config.uuid
     }
 
-    fn add_output(&mut self, receiver: Sender<Message>){
-        self.core.add_external_output(receiver);
+    fn add_output(&mut self, receiver: Sender<Message>) -> Result<(), String>{
+        self.core.add_external_output(receiver)
     }
 
-    fn add_outputs(&mut self, senders: Vec<Sender<Message>>){
-        self.core.add_external_outputs(senders);
+    fn add_outputs(&mut self, senders: Vec<Sender<Message>>) -> Result<(), String>{
+        self.core.add_external_outputs(senders)
     }
 }
 

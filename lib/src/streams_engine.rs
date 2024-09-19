@@ -2,10 +2,10 @@ use std::sync::mpsc::Sender;
 use uuid::Uuid;
 use std::string::String;
 
+use crate::message::Message;
 use crate::stream::file_stream::FileStream;
 use crate::stream::serial_stream::SerialStream;
 use crate::stream::udp_stream::UdpStream;
-use crate::stream::Message;
 use crate::stream::{terminal_stream::TerminalStream, Stream, StreamConfig, StreamTypeConfig};
 
 

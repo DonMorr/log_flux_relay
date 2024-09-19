@@ -1,4 +1,5 @@
-use std::{thread, time::Duration};
+use std::{sync::{atomic::{AtomicBool, Ordering}, Arc}, thread, time::Duration};
+use ctrlc;
 
 use lib::{
     stream::{
@@ -100,8 +101,18 @@ use lib::{
     }
 
 
+
 fn main() {
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = Arc::clone(&running);
     let mut engine: StreamsEngine = StreamsEngine::new();
+    
+    ctrlc::set_handler(move || {
+        println!("Received Ctrl+C! Shutting down...");
+        running_clone.store(false, Ordering::SeqCst); // Set the flag to false
+    })
+    .expect("Error setting Ctrl-C handler");
+
     match create_streams_and_configure_engine(&mut engine){
         Ok(_) => {
             match engine.initialise(){
@@ -111,7 +122,10 @@ fn main() {
                     match engine.start() {
                         Ok(_) => {
                             println!("Engine successfully started");
-                            thread::sleep(Duration::from_secs(60*60));
+                            
+                            while running.load(Ordering::SeqCst) {
+                                thread::sleep(Duration::from_secs(1)); // Simulate work
+                            }
         
                             match engine.stop() {
                                 Ok(_) => {

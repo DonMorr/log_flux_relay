@@ -73,8 +73,9 @@ impl Stream for FileStream {
             thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
         }));
 
-        self.core.start();
-        todo!("Implement start");
+        self.core.start()?;
+        
+        Ok(())
     }
     fn stop(&mut self) -> Result<(), String> {
         todo!("Implement stop");
@@ -92,12 +93,12 @@ impl Stream for FileStream {
         &self.config.uuid
     }
 
-    fn add_output(&mut self, receiver: Sender<Message>){
-        self.core.add_external_output(receiver);
+    fn add_output(&mut self, receiver: Sender<Message>) -> Result<(), String>{
+        self.core.add_external_output(receiver)
     }
 
-    fn add_outputs(&mut self, senders: Vec<Sender<Message>>){
-        self.core.add_external_outputs(senders);
+    fn add_outputs(&mut self, senders: Vec<Sender<Message>>) -> Result<(), String>{
+        self.core.add_external_outputs(senders)
     }
 
 }

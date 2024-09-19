@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 lib = { path = "../lib" }
+ctrlc = "3.4"
