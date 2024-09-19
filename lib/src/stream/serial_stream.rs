@@ -1,4 +1,4 @@
-use std::{io::{self, Read}, sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
+use std::{io::{self, Read}, sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
 use chrono::Utc;
 use mio::{Events, Interest, Poll, Token};
 use serde::{Deserialize, Serialize};
@@ -46,7 +46,27 @@ pub struct SerialStream {
     config: StreamConfig,
     new_message_generated_sender: Sender<Message>,
     new_message_received_receiver: Option<Receiver<Message>>,
-    thread_handle: Option<JoinHandle<()>>
+    thread_handle: Option<JoinHandle<()>>,
+    thread_stop_requsted: Arc<AtomicBool>
+}
+
+impl SerialStream {
+    pub fn new(config: StreamConfig) -> Result<Self, &'static str> {
+        if let StreamTypeConfig::Serial {..} = config.type_config {
+            let mut core = StreamCore::new();
+            Ok(Self{
+                config:config,
+                new_message_generated_sender: core.get_internal_input_sender_clone(),
+                new_message_received_receiver: Some(core.get_internal_output_receiver()),
+                core: core,
+                thread_handle: None,
+                thread_stop_requsted: Arc::new(AtomicBool::new(false))
+            })
+        }
+        else{
+            Err("Invalid type_config for a SerialStream")
+        }
+    }
 }
 
 
@@ -55,18 +75,17 @@ impl Stream for SerialStream {
         let stream_name = self.config.name.clone();
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let sender: Sender<Message> = self.new_message_generated_sender.clone();
-        let mut counter: u64 = 0;
-        let mut msg_counter: i32 = 0;
         let path:String;
         let baud_rate: u32;
         let mut buf = [0u8; 10240];
-        let mut line_complete: bool = false;
         let mut last_partial_line: String = String::new();
         let mut events = Events::with_capacity(1);
         let mut poll = match Poll::new() {
             Ok(poll) => poll,
             Err(e) => panic!("failed to create Poll instance; err={:?}", e),
         };
+
+        let stop_requested = Arc::clone(&self.thread_stop_requsted);
         
         println!("'{}' - SerialStream starting thread", stream_name);
 
@@ -77,9 +96,6 @@ impl Stream for SerialStream {
         else{
             todo!("Handle this error");
         }
-
-
-        // Create a poll instance.
 
         // Create the serial port
         println!("Opening {} at {},8N1", path, baud_rate);
@@ -94,6 +110,11 @@ impl Stream for SerialStream {
 
 
         self.thread_handle = Some(thread::spawn(move || loop {
+            
+            // Has stop been requested?
+            if stop_requested.load(Ordering::Relaxed) {
+                break;
+            }
 
             // New message received from core.
             while let Ok(msg) = receiver.try_recv() {
@@ -146,8 +167,20 @@ impl Stream for SerialStream {
     }
 
     fn stop(&mut self) -> Result<(), String> {
+        println!("'{}' - SerialStream stopping", self.config.name);
         self.core.stop()?;
-        todo!("Implement stop");
+        self.await_thread_stop()
+    }
+
+    fn await_thread_stop(&mut self) -> Result<(), String> {
+        self.thread_stop_requsted.store(true, Ordering::Relaxed);
+
+        if let Some(thread_handle) = self.thread_handle.take() {
+            thread_handle.join().expect("Failed to join thread");
+            Ok(())
+        } else {
+            Err("Thread handle not available".to_string())
+        }
     }
 
     fn get_config(&self) -> &StreamConfig {
@@ -168,23 +201,5 @@ impl Stream for SerialStream {
 
     fn add_outputs(&mut self, senders: Vec<Sender<Message>>) -> Result<(), String>{
         self.core.add_external_outputs(senders)
-    }
-}
-
-impl SerialStream {
-    pub fn new(config: StreamConfig) -> Result<Self, &'static str> {
-        if let StreamTypeConfig::Serial {..} = config.type_config {
-            let mut core = StreamCore::new();
-            Ok(Self{
-                config:config,
-                new_message_generated_sender: core.get_internal_input_sender_clone(),
-                new_message_received_receiver: Some(core.get_internal_output_receiver()),
-                core: core,
-                thread_handle: None
-            })
-        }
-        else{
-            Err("Invalid type_config for a SerialStream")
-        }
     }
 }

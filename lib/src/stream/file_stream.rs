@@ -1,4 +1,4 @@
-use std::{sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
+use std::{sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
 use chrono::{Local, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -24,7 +24,8 @@ pub struct FileStream {
     config: StreamConfig,
     core: StreamCore,
     new_message_received_receiver: Option<Receiver<Message>>,
-    thread_handle: Option<JoinHandle<()>>
+    thread_handle: Option<JoinHandle<()>>,
+    thread_stop_requsted: Arc<AtomicBool>
 }
 
 impl Stream for FileStream {
@@ -34,6 +35,7 @@ impl Stream for FileStream {
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let file_path: String;
         let full_file_path: String;
+        let stop_requested = Arc::clone(&self.thread_stop_requsted);
 
         if let StreamTypeConfig::File {config} = &self.config.type_config {
             file_path = config.file_path.clone();
@@ -70,6 +72,11 @@ impl Stream for FileStream {
             }
             
             thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
+
+            // Has stop been requested?
+            if stop_requested.load(Ordering::Relaxed) {
+                break;
+            }
         }));
 
         self.core.start()?;
@@ -78,8 +85,20 @@ impl Stream for FileStream {
     }
     
     fn stop(&mut self) -> Result<(), String> {
+        println!("'{}' - FileStream stopping", self.config.name);
         self.core.stop()?;
-        todo!("Implement stop");
+        self.await_thread_stop()
+    }
+
+    fn await_thread_stop(&mut self) -> Result<(), String> {
+        self.thread_stop_requsted.store(true, Ordering::Relaxed);
+
+        if let Some(thread_handle) = self.thread_handle.take() {
+            thread_handle.join().expect("Failed to join thread");
+            Ok(())
+        } else {
+            Err("Thread handle not available".to_string())
+        }
     }
 
     fn get_config(&self) -> &StreamConfig {
@@ -113,7 +132,8 @@ impl FileStream {
                 config: config,
                 new_message_received_receiver: Some(core.get_internal_output_receiver()),
                 core: core,
-                thread_handle: None
+                thread_handle: None,
+                thread_stop_requsted: Arc::new(AtomicBool::new(false))
             })
         }
         else{

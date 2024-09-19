@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, sync::mpsc::{Receiver, Sender}, thread::{self, JoinHandle}, time::Duration};
+use std::{borrow::Borrow, sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
 use chrono::{Utc, Local, TimeZone};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -28,7 +28,8 @@ pub struct UdpStream {
     core: StreamCore,
     new_message_generated_sender: Sender<Message>,
     new_message_received_receiver: Option<Receiver<Message>>,
-    thread_handle: Option<JoinHandle<()>>
+    thread_handle: Option<JoinHandle<()>>,
+    thread_stop_requsted: Arc<AtomicBool>
 }
 
 impl Stream for UdpStream {
@@ -43,6 +44,7 @@ impl Stream for UdpStream {
         let out_enabled: bool;
         let mut out_socket: Option<UdpSocket> = None;
         let mut out_address: String = String::new();
+        let stop_requested = Arc::clone(&self.thread_stop_requsted);
 
         let in_port: u16;
         let in_enabled: bool;
@@ -98,6 +100,11 @@ impl Stream for UdpStream {
             
             
             thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
+                        
+            // Has stop been requested?
+            if stop_requested.load(Ordering::Relaxed) {
+                break;
+            }
         }));
 
         self.core.start()?;
@@ -106,8 +113,21 @@ impl Stream for UdpStream {
     }
 
     fn stop(&mut self) -> Result<(), String> {
+        println!("'{}' - UdpStream stopping", self.config.name);
         self.core.stop()?;
-        todo!("Implement stop");
+        self.await_thread_stop()?;
+        Ok(())
+    }
+
+    fn await_thread_stop(&mut self) -> Result<(), String> {
+        self.thread_stop_requsted.store(true, Ordering::Relaxed);
+
+        if let Some(thread_handle) = self.thread_handle.take() {
+            thread_handle.join().expect("Failed to join thread");
+            Ok(())
+        } else {
+            Err("Thread handle not available".to_string())
+        }
     }
 
     fn get_config(&self) -> &StreamConfig {
@@ -142,7 +162,8 @@ impl UdpStream {
                 new_message_generated_sender: core.get_internal_input_sender_clone(),
                 new_message_received_receiver: Some(core.get_internal_output_receiver()),
                 core: core,
-                thread_handle: None
+                thread_handle: None,
+                thread_stop_requsted: Arc::new(AtomicBool::new(false))
             })
         }
         else{

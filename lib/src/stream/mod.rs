@@ -4,6 +4,10 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 use core::fmt;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 pub mod serial_stream;
 pub mod file_stream;
@@ -89,7 +93,8 @@ pub struct StreamCore{
     internal_input_sender: Sender<Message>,
     internal_input_receiver: Option<Receiver<Message>>,
 
-    thread_handle: Option<JoinHandle<()>>
+    thread_handle: Option<JoinHandle<()>>,
+    thread_stop_requsted: Arc<AtomicBool>
 }
 
 impl StreamCore{
@@ -109,6 +114,7 @@ impl StreamCore{
             internal_input_sender: tx_int_input,
             internal_input_receiver: Some(rx_int_input),
             thread_handle: Option::None,
+            thread_stop_requsted: Arc::new(AtomicBool::new(false))
         }
     }
 
@@ -156,6 +162,8 @@ impl StreamCore{
         let ext_outputs: Vec<Sender<Message>> = self.external_output_senders.take().ok_or("External output senders unavailable")?;
         let int_sender: Sender<Message> = self.internal_output_sender.clone();
 
+        let stop_requested = Arc::clone(&self.thread_stop_requsted);
+
         self.thread_handle = Some(thread::spawn(move || loop {
             // Handle Message received from other Streams
             while let Ok(msg) = ext_receiver.try_recv() {
@@ -188,15 +196,32 @@ impl StreamCore{
             }
 
             thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
+
+            // Has stop been requested?
+            if stop_requested.load(Ordering::Relaxed) {
+                break;
+            }
         }));
 
         self.state = StreamState::Started;
         Ok(())
     }
+
     pub fn stop(&mut self) -> Result<(), String> {
-        
-        todo!("Implement stop")
+        self.await_thread_stop()
     }
+
+    fn await_thread_stop(&mut self) -> Result<(), String> {
+        self.thread_stop_requsted.store(true, Ordering::Relaxed);
+
+        if let Some(thread_handle) = self.thread_handle.take() {
+            thread_handle.join().expect("Failed to join core thread");
+            Ok(())
+        } else {
+            Err("Core thread handle not available".to_string())
+        }
+    }
+
 }
 
 impl Default for StreamConfig{
@@ -220,4 +245,5 @@ pub trait Stream {
     fn get_uuid(&self) -> &Uuid;
     fn add_output(&mut self, sender: Sender<Message>) -> Result<(), String>;
     fn add_outputs(&mut self, senders: Vec<Sender<Message>>) -> Result<(), String>;
+    fn await_thread_stop(&mut self) -> Result<(), String>;
 }
