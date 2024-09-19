@@ -161,6 +161,10 @@ impl StreamCore{
             while let Ok(msg) = ext_receiver.try_recv() {
                 // First we filter the messages
                 // Todo
+
+                // Forward the message to the internal, specialised stream
+                // TODO - handle errors here?
+                let _ = int_sender.send(msg.clone());
                 
                 // Next we forward the message to the external Streams.
                 for output in ext_outputs.iter() {
@@ -168,10 +172,6 @@ impl StreamCore{
                     // TODO - handle errors here?
                     let _ = output.send(msg.clone());
                 }
-
-                // Forward the message to the internal, specialised stream
-                    // TODO - handle errors here?
-                let _ = int_sender.send(msg.clone());
             }
             
             // Handle Messages received from the internal, specialised Stream
@@ -194,6 +194,7 @@ impl StreamCore{
         Ok(())
     }
     pub fn stop(&mut self) -> Result<(), String> {
+        
         todo!("Implement stop")
     }
 }

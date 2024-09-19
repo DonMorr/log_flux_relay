@@ -87,7 +87,9 @@ impl Stream for TerminalStream {
 
         Ok(())
     }
+    
     fn stop(&mut self) -> Result<(), String> {
+        self.core.stop()?;
         todo!("Implement stop");
     }
 

@@ -106,6 +106,7 @@ impl Stream for UdpStream {
     }
 
     fn stop(&mut self) -> Result<(), String> {
+        self.core.stop()?;
         todo!("Implement stop");
     }
 

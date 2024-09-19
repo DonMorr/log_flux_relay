@@ -146,6 +146,7 @@ impl Stream for SerialStream {
     }
 
     fn stop(&mut self) -> Result<(), String> {
+        self.core.stop()?;
         todo!("Implement stop");
     }
 
