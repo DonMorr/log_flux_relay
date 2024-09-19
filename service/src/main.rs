@@ -86,10 +86,10 @@ use lib::{
     output_udp_stream_config.type_config = StreamTypeConfig::Udp { config: udp_stream_config };
 
     // Connect up the streams
-    source_stream_1_config.output_streams.push(output_dummy_stream_config.uuid.clone());
-    //source_stream_2_config.output_streams.push(output_dummy_stream_config.uuid.clone());
-    output_dummy_stream_config.output_streams.push(output_file_stream_config.uuid.clone());
-    output_dummy_stream_config.output_streams.push(output_udp_stream_config.uuid.clone());
+    source_stream_1_config.add_output_stream(output_dummy_stream_config.uuid.clone());
+    //source_stream_2_config.add_output_stream(output_dummy_stream_config.uuid.clone());
+    output_dummy_stream_config.add_output_stream(output_file_stream_config.uuid.clone());
+    output_dummy_stream_config.add_output_stream(output_udp_stream_config.uuid.clone());
 
     engine.add_stream(source_stream_1_config)?;
     //engine.add_stream(source_stream_2_config)?;

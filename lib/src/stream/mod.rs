@@ -52,10 +52,10 @@ impl fmt::Display for StreamTypeConfig {
 pub struct StreamConfig {
     pub uuid: Uuid,
     pub name: String,
-    pub output_streams: Vec<Uuid>,
     pub input_filter: String,
     pub type_config: StreamTypeConfig,
     pub message_delimiter:String,
+    pub output_streams: Vec<Uuid>
 }
 
 impl StreamConfig {
@@ -63,6 +63,10 @@ impl StreamConfig {
         StreamConfig{
             uuid, name, output_streams, input_filter, type_config: config, message_delimiter: message_delimiter
         }
+    }
+
+    pub fn add_output_stream(&mut self, output_stream: Uuid) {
+        self.output_streams.push(output_stream);
     }
 }
 
@@ -171,14 +175,12 @@ impl StreamCore{
                 // Todo
 
                 // Forward the message to the internal, specialised stream
-                // TODO - handle errors here?
-                let _ = int_sender.send(msg.clone());
+                int_sender.send(msg.clone()).unwrap();
                 
                 // Next we forward the message to the external Streams.
                 for output in ext_outputs.iter() {
                     // Forward the message to the external Streams
-                    // TODO - handle errors here?
-                    let _ = output.send(msg.clone());
+                    output.send(msg.clone()).unwrap();
                 }
             }
             
@@ -189,9 +191,7 @@ impl StreamCore{
                 
                 // Next we forward the message to external Streams
                 for output in ext_outputs.iter() {
-                    // TODO - not sure if we need to clone the message?
-                    // TODO - not sure how we return an error here?
-                    let _ = output.send(msg.clone());
+                    output.send(msg.clone()).unwrap();
                 }
             }
 

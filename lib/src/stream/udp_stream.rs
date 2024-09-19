@@ -88,6 +88,7 @@ impl Stream for UdpStream {
                             match socket.send_to(log_message.as_bytes(), out_address.clone()) {
                                 Err(e) => {
                                     eprintln!("Failed to send message: {}", e);
+                                    break;
                                 },
                                 _ =>{}
                             }

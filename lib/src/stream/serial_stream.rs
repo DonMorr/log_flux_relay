@@ -94,7 +94,7 @@ impl Stream for SerialStream {
             baud_rate = config.baud_rate;
         }
         else{
-            todo!("Handle this error");
+            return Err("Invalid type_config for a SerialStream".to_string());
         }
 
         // Create the serial port
@@ -139,15 +139,16 @@ impl Stream for SerialStream {
 
                                 for line in complete_lines {
                                     let new_msg: Message = Message::new(Utc::now().timestamp_millis(), stream_name.clone(), line);
-                                    sender.send(new_msg);
+                                    sender.send(new_msg).unwrap();
                                 }
                             }
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                                print!("SerialStream stopping due to error: {}", e);
                                 break;
                             }
                             Err(e) => {
-                                print!("Quitting due to read error: {}", e);
-    
+                                print!("SerialStream stopping due to read error: {}", e);
+                                break;
                             }
                         }
                     },
@@ -155,7 +156,8 @@ impl Stream for SerialStream {
                         // This should never happen as we only registered our
                         // `UdpSocket` using the `UDP_SOCKET` token, but if it ever
                         // does we'll log it.
-                        // warn!("Got event for unexpected token: {:?}", event);
+                        print!("SerialStream - Got event for unexpected token: {:?}, stopping", event);
+                        break;
                     }
                 }
             }
