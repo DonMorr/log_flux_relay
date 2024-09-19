@@ -1,6 +1,4 @@
 use std::sync::mpsc::Sender;
-use std::{fs, sync::mpsc::Receiver};
-use std::path::Path;
 use uuid::Uuid;
 
 use crate::stream::file_stream::FileStream;
@@ -8,7 +6,6 @@ use crate::stream::serial_stream::SerialStream;
 use crate::stream::udp_stream::UdpStream;
 use crate::stream::Message;
 use crate::stream::{dummy_stream::DummyStream, Stream, StreamConfig, StreamTypeConfig};
-use super::yalm_config::YalmConfig;
 
 
 pub struct YalmEngine{
@@ -24,14 +21,6 @@ impl YalmEngine {
         println!("Adding stream: {}", config_to_add.name);
 
         match config_to_add.type_config {
-            // StreamTypeConfig::Serial { .. } => {
-            //     let stream = SerialStream::new(config_to_add).unwrap();
-            //     self.streams.push(Box::new(stream));
-            // },
-            // StreamTypeConfig::Buffer { .. } => {
-            //     let stream = BufferStream::new(config_to_add).unwrap();
-            //     self.streams.push(Box::new(stream));
-            // },
             StreamTypeConfig::Dummy { .. } => {
                 let stream = DummyStream::new(config_to_add).unwrap();
                 self.streams.push(Box::new(stream));
@@ -48,9 +37,6 @@ impl YalmEngine {
                 let stream: UdpStream = UdpStream::new(config_to_add).unwrap();
                 self.streams.push(Box::new(stream));
             },
-            StreamTypeConfig::Buffer { .. } => todo!(),
-            StreamTypeConfig::Socket { config } => todo!(),
-            StreamTypeConfig::Terminal { config } => todo!(),
             StreamTypeConfig::Mqtt { config } => todo!(),
             StreamTypeConfig::None => todo!(),
         }

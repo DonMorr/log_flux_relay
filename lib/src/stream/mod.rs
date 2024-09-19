@@ -4,26 +4,20 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 pub mod serial_stream;
-pub mod buffer_stream;
 pub mod file_stream;
-pub mod socket_stream;
 pub mod mqtt_stream;
-pub mod terminal_stream;
-pub mod config_manager;
 pub mod dummy_stream;
 pub mod udp_stream;
 
 use serial_stream::SerialStreamConfig;
-use buffer_stream::BufferStreamConfig;
 use file_stream::FileStreamConfig;
-use socket_stream::SocketStreamConfiguration;
 use mqtt_stream::MqttStreamConfig;
-use terminal_stream::TerminalStreamConfig;
 use dummy_stream::DummyStreamConfig;
 use udp_stream::UdpStreamConfig;
 
 pub const INTERNAL_STREAM_TICK_MS: u64 = 10; //Maximum internal TICK rate is 1000/HZ.
 
+// TODO: remove
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum Direction {
     Input,
@@ -31,6 +25,7 @@ pub enum Direction {
     BiDirectional,
 }
 
+// TODO: remove
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum DataType {
     Ascii,
@@ -40,11 +35,8 @@ pub enum DataType {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum StreamTypeConfig {
     Serial{config: SerialStreamConfig},
-    Socket{config: SocketStreamConfiguration},
     File{config: FileStreamConfig},
-    Terminal{config: TerminalStreamConfig},
     Mqtt{config: MqttStreamConfig},
-    Buffer{config: BufferStreamConfig},
     Dummy{config: DummyStreamConfig},
     Udp{config: UdpStreamConfig},
     None
@@ -226,11 +218,4 @@ pub trait Stream {
     fn get_uuid(&self) -> &Uuid;
     fn add_output(&mut self, sender: Sender<Message>);
     fn add_outputs(&mut self, senders: Vec<Sender<Message>>);
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
 }
