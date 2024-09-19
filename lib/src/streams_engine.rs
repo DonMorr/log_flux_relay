@@ -144,14 +144,15 @@ impl StreamsEngine {
     ///
     /// # Arguments
     /// * `uuids_with_output_senders` - A vector of tuples, where each tuple contains a `Uuid` and a vector of `Sender<Message>` objects.
-    fn add_outputs_to_streams(&mut self, uuids_with_output_senders: Vec<(Uuid, Vec<Sender<Message>>)>) {
+    fn add_outputs_to_streams(&mut self, uuids_with_output_senders: Vec<(Uuid, Vec<Sender<Message>>)>) -> Result<(), String> {
         for stream in self.streams.iter_mut() {
             for (uuid, senders) in uuids_with_output_senders.iter() {
                 if stream.get_uuid() == uuid {
-                    stream.add_outputs(senders.clone());
+                    stream.add_outputs(senders.clone())?;
                 }
             }
         }
+        Ok(())
     }
     
     /// Links the streams in the `StreamsEngine` by gathering the UUIDs and senders for each stream's outputs,
@@ -164,7 +165,7 @@ impl StreamsEngine {
     /// The first phase iterates through the streams, collects the output senders for each stream, and stores
     /// the UUID and associated senders in a `Vec`. The second phase then calls `add_outputs_to_streams` to
     /// add the collected senders to the corresponding streams.
-    fn link_streams(&mut self) {
+    fn link_streams(&mut self) -> Result<(), String> {
         // Phase 1: Gather the UUIDs and senders (no mutable borrow yet)
         let mut uuids_with_output_senders: Vec<(Uuid, Vec<Sender<Message>>)> = Vec::new();
     
@@ -186,7 +187,9 @@ impl StreamsEngine {
         }
     
         // Phase 2: Mutate the streams (now we do the mutable borrow)
-        self.add_outputs_to_streams(uuids_with_output_senders);
+        self.add_outputs_to_streams(uuids_with_output_senders)?;
+
+        Ok(())
     }
 
     /// Initializes the `StreamsEngine` by performing the following steps:
@@ -197,7 +200,7 @@ impl StreamsEngine {
     /// A `Result` with an empty `()` value on success, or a `String` error message on failure.
     pub fn initialise(&mut self) -> Result<(), String> {
         self.is_valid()?;
-        self.link_streams();
+        self.link_streams()?;
         Ok(())
     }
     

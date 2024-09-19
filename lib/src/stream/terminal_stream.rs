@@ -75,7 +75,8 @@ impl Stream for TerminalStream {
                         println!("'{}' - TerminalStream generated new message: {} at time {}", stream_name, new_msg.text, new_msg.timestamp_ms);
                     }
 
-                    sender.send(new_msg);
+                    // TODO - handle this properly
+                    let _ = sender.send(new_msg);
                 }
             }
 

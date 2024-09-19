@@ -23,7 +23,6 @@ impl FileStreamConfig {
 pub struct FileStream {
     config: StreamConfig,
     core: StreamCore,
-    new_message_generated_sender: Sender<Message>,
     new_message_received_receiver: Option<Receiver<Message>>,
     thread_handle: Option<JoinHandle<()>>
 }
@@ -110,7 +109,6 @@ impl FileStream {
 
             Ok(Self{
                 config: config,
-                new_message_generated_sender: core.get_internal_input_sender_clone(),
                 new_message_received_receiver: Some(core.get_internal_output_receiver()),
                 core: core,
                 thread_handle: None
