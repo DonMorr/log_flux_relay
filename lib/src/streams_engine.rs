@@ -6,6 +6,7 @@ use crate::message::Message;
 use crate::stream::file_stream::FileStream;
 use crate::stream::serial_stream::SerialStream;
 use crate::stream::udp_stream::UdpStream;
+use crate::stream::waveforms_i2c_stream::WaveformsI2cStream;
 use crate::stream::{terminal_stream::TerminalStream, Stream, StreamConfig, StreamTypeConfig};
 
 
@@ -56,6 +57,10 @@ impl StreamsEngine {
             },
             StreamTypeConfig::Udp { .. } =>  {
                 let stream: UdpStream = UdpStream::new(config_to_add)?;
+                self.streams.push(Box::new(stream));
+            },
+            StreamTypeConfig::WaveformsI2c { .. } => {
+                let stream: WaveformsI2cStream = WaveformsI2cStream::new(config_to_add)?;
                 self.streams.push(Box::new(stream));
             },
             _ => {

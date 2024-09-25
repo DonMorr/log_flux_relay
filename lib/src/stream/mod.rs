@@ -14,12 +14,14 @@ pub mod file_stream;
 pub mod mqtt_stream;
 pub mod terminal_stream;
 pub mod udp_stream;
+pub mod waveforms_i2c_stream;
 
 use serial_stream::SerialStreamConfig;
 use file_stream::FileStreamConfig;
 use mqtt_stream::MqttStreamConfig;
 use terminal_stream::TerminalStreamConfig;
 use udp_stream::UdpStreamConfig;
+use waveforms_i2c_stream::WaveformsI2cStreamConfig;
 
 use crate::message::Message;
 
@@ -32,6 +34,7 @@ pub enum StreamTypeConfig {
     Mqtt{config: MqttStreamConfig},
     Terminal{config: TerminalStreamConfig},
     Udp{config: UdpStreamConfig},
+    WaveformsI2c{config: WaveformsI2cStreamConfig},
     None
 }
 
@@ -43,6 +46,7 @@ impl fmt::Display for StreamTypeConfig {
             StreamTypeConfig::Mqtt{..} => write!(f, "Mqtt"),
             StreamTypeConfig::Terminal{..} => write!(f, "Terminal"),
             StreamTypeConfig::Udp{..} => write!(f, "Udp"),
+            StreamTypeConfig::WaveformsI2c{..} => write!(f, "WaveformsI2c"),
             StreamTypeConfig::None => write!(f, "None")
         }
     }

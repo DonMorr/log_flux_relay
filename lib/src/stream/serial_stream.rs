@@ -7,7 +7,7 @@ extern crate mio;
 extern crate mio_serial;
 use mio_serial::SerialPortBuilderExt;
 use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
-use crate::{stream::INTERNAL_STREAM_TICK_MS, tools::stream_tools::process_raw_log_entry};
+use crate::{stream::INTERNAL_STREAM_TICK_MS, tools::stream_tools::stream_tools::process_raw_log_entry};
 use std::str;
 const SERIAL_TOKEN: Token = Token(0);
 
@@ -143,7 +143,7 @@ impl Stream for SerialStream {
                                 }
                             }
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                                print!("SerialStream stopping due to error: {}", e);
+                                // No data available yet - this is not an error as we're using non-blocking IO.
                                 break;
                             }
                             Err(e) => {

@@ -3,12 +3,7 @@ use ctrlc;
 
 use lib::{
     stream::{
-        terminal_stream::TerminalStreamConfig, 
-        file_stream::FileStreamConfig, 
-        serial_stream::{FlowControl, SerialStreamConfig},
-        udp_stream::UdpStreamConfig,
-        StreamConfig,
-        StreamTypeConfig
+        file_stream::FileStreamConfig, serial_stream::{FlowControl, SerialStreamConfig}, terminal_stream::TerminalStreamConfig, udp_stream::UdpStreamConfig, waveforms_i2c_stream::WaveformsI2cStreamConfig, StreamConfig, StreamTypeConfig
     }, 
     streams_engine::StreamsEngine
 };
@@ -45,14 +40,23 @@ use lib::{
 
     let mut serial_stream_1_config: SerialStreamConfig = SerialStreamConfig::new();
     serial_stream_1_config.baud_rate = 115200;
-    serial_stream_1_config.port_path = String::from("COM6");
+    serial_stream_1_config.port_path = String::from("COM4");
     serial_stream_1_config.start_bits = 1;
     serial_stream_1_config.stop_bits = 1;
     serial_stream_1_config.flow_control = FlowControl::None();
 
     let mut source_stream_1_config: StreamConfig = StreamConfig::default();
-    source_stream_1_config.name = String::from("Serial Stream COM6");
+    source_stream_1_config.name = String::from("Serial Stream COM4");
     source_stream_1_config.type_config = StreamTypeConfig::Serial { config:serial_stream_1_config };
+
+    let mut waveforms_i2c_config: WaveformsI2cStreamConfig = WaveformsI2cStreamConfig::new();
+    waveforms_i2c_config.baud_rate = 4000000;
+    waveforms_i2c_config.scl_pin = 0;
+    waveforms_i2c_config.sda_pin = 1;
+
+    let mut waveforms_source_stream_config: StreamConfig = StreamConfig::default();
+    waveforms_source_stream_config.name = String::from("Waveforms I2C");
+    waveforms_source_stream_config.type_config = StreamTypeConfig::WaveformsI2c { config:waveforms_i2c_config };
 
     // let mut serial_stream_2_config: SerialStreamConfig = SerialStreamConfig::new();
     // serial_stream_2_config.baud_rate = 115200;
@@ -65,6 +69,7 @@ use lib::{
     // source_stream_2_config.name = String::from("Serial Stream COM6");
     // source_stream_2_config.direction = Direction::BiDirectional;
     // source_stream_2_config.type_config = StreamTypeConfig::Serial { config:serial_stream_2_config };
+    //source_stream_2_config.add_output_stream(output_dummy_stream_config.uuid.clone());
 
     let dummy_stream_config_con: TerminalStreamConfig = TerminalStreamConfig::new();
     let mut output_dummy_stream_config: StreamConfig = StreamConfig::default();
@@ -79,7 +84,7 @@ use lib::{
     // UDP stream for sending data to external ULogViewer
     let mut udp_stream_config: UdpStreamConfig = UdpStreamConfig::new();
     udp_stream_config.output_ip_address = String::from("localhost");
-    udp_stream_config.output_port = 49152;
+    udp_stream_config.output_port = 65000;
     udp_stream_config.output_enabled = true;
     let mut output_udp_stream_config: StreamConfig = StreamConfig::default();
     output_udp_stream_config.name = String::from("UDP Writer A");
@@ -87,7 +92,7 @@ use lib::{
 
     // Connect up the streams
     source_stream_1_config.add_output_stream(output_dummy_stream_config.uuid.clone());
-    //source_stream_2_config.add_output_stream(output_dummy_stream_config.uuid.clone());
+    waveforms_source_stream_config.add_output_stream(output_dummy_stream_config.uuid.clone());
     output_dummy_stream_config.add_output_stream(output_file_stream_config.uuid.clone());
     output_dummy_stream_config.add_output_stream(output_udp_stream_config.uuid.clone());
 
@@ -96,6 +101,7 @@ use lib::{
     engine.add_stream(output_file_stream_config)?;
     engine.add_stream(output_dummy_stream_config)?;
     engine.add_stream(output_udp_stream_config)?;
+    engine.add_stream(waveforms_source_stream_config)?;
     
     Ok(())
     }

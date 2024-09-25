@@ -47,7 +47,6 @@ impl Stream for UdpStream {
         let stop_requested = Arc::clone(&self.thread_stop_requsted);
         let mut in_socket: Option<UdpSocket> = None;
         let mut in_address: String = String::new();
-        let in_ip_address: String;
 
         let in_port: u16;
         let in_enabled: bool;
@@ -58,7 +57,6 @@ impl Stream for UdpStream {
             out_enabled = config.output_enabled;
             in_port = config.input_port;
             in_enabled = config.input_enabled;
-            in_ip_address = config.input_port;
         }
         else{
             todo!("Handle this error");
@@ -76,16 +74,33 @@ impl Stream for UdpStream {
         }
 
         if in_enabled {
-            in_address = format!("{in_ip_address}:{in_port}");
-
-            in_socket = match UdpSocket::bind("0.0.0.0:8080") {
+            in_socket = match UdpSocket::bind("0.0.0.0:{in_port}") {
                 Ok(in_socket) => Some(in_socket),
                 Err(e) => panic!("failed to open port; err={:?}", e)
             };
-            todo!("Support for input UDP server currently not suppored.");
         }
 
         self.thread_handle = Some(thread::spawn(move || loop {
+
+            if in_enabled {
+                let mut buf = [0; 1024];
+                match in_socket.as_ref().unwrap().recv_from(&mut buf) {
+                    Ok((size, _)) => {
+                        let received_message = String::from_utf8_lossy(&buf[..size]);
+                        let timestamp = Utc::now().timestamp_millis();
+                        let message = Message {
+                            originator: stream_name.clone(),
+                            text: received_message.to_string(),
+                            timestamp_ms: timestamp
+                        };
+                        sender.send(message).expect("Failed to send message");
+                    },
+                    Err(e) => {
+                        eprintln!("Failed to receive message: {}", e);
+                        break;
+                    }
+                }
+            }
 
             if out_enabled {
                 match out_socket {
