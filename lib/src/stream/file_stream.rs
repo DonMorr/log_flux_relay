@@ -75,6 +75,7 @@ impl Stream for FileStream {
 
             // Has stop been requested?
             if stop_requested.load(Ordering::Relaxed) {
+                // File is closed automatically when it goes out of scope.
                 break;
             }
         }));

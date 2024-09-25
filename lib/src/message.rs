@@ -14,6 +14,7 @@ pub struct Message {
     pub text: String,
 }
 
+// Add new function called clear
 impl Message {
     /// Creates a new `Message` with the given timestamp, originator, and text.
     ///

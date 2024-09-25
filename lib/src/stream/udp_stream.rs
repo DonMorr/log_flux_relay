@@ -45,6 +45,9 @@ impl Stream for UdpStream {
         let mut out_socket: Option<UdpSocket> = None;
         let mut out_address: String = String::new();
         let stop_requested = Arc::clone(&self.thread_stop_requsted);
+        let mut in_socket: Option<UdpSocket> = None;
+        let mut in_address: String = String::new();
+        let in_ip_address: String;
 
         let in_port: u16;
         let in_enabled: bool;
@@ -55,6 +58,7 @@ impl Stream for UdpStream {
             out_enabled = config.output_enabled;
             in_port = config.input_port;
             in_enabled = config.input_enabled;
+            in_ip_address = config.input_port;
         }
         else{
             todo!("Handle this error");
@@ -67,11 +71,17 @@ impl Stream for UdpStream {
 
             out_socket = match UdpSocket::bind("0.0.0.0:0") {
                 Ok(out_socket) => Some(out_socket),
-                Err(e) => panic!("failed to open port; err={:?}", e),
+                Err(e) => panic!("failed to open port; err={:?}", e)
             };
         }
 
         if in_enabled {
+            in_address = format!("{in_ip_address}:{in_port}");
+
+            in_socket = match UdpSocket::bind("0.0.0.0:8080") {
+                Ok(in_socket) => Some(in_socket),
+                Err(e) => panic!("failed to open port; err={:?}", e)
+            };
             todo!("Support for input UDP server currently not suppored.");
         }
 
