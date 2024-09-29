@@ -1,5 +1,5 @@
-use std::{borrow::Borrow, sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
-use chrono::{Utc, Local, TimeZone};
+use std::{net::Shutdown, sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::stream::INTERNAL_STREAM_TICK_MS;
@@ -7,18 +7,22 @@ use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
 use std::net::UdpSocket;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum UdpDirection{
+    UdpOutput,
+    UdpInput
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct UdpStreamConfig{
+    pub direction: UdpDirection,
     pub output_ip_address: String,
     pub output_port: u16,
-    pub output_enabled: bool,
-    
     pub input_port: u16,
-    pub input_enabled: bool
 }
 
 impl UdpStreamConfig {
     pub fn new() -> Self {
-        UdpStreamConfig {output_port: 0, output_enabled: false, output_ip_address: String::new(), input_port: 0, input_enabled: false}
+        UdpStreamConfig {output_port: 0, direction: UdpDirection::UdpOutput, output_ip_address: String::new(), input_port: 0}
     }
 }
 
@@ -39,24 +43,22 @@ impl Stream for UdpStream {
         let receiver: Receiver<Message> = self.new_message_received_receiver.take().expect("Receiver unavailable");
         let sender: Sender<Message> = self.new_message_generated_sender.clone();
 
+        let direction: UdpDirection;
         let out_ip_address: String;
         let out_port: u16;
-        let out_enabled: bool;
         let mut out_socket: Option<UdpSocket> = None;
         let mut out_address: String = String::new();
         let stop_requested = Arc::clone(&self.thread_stop_requsted);
         let mut in_socket: Option<UdpSocket> = None;
-        let mut in_address: String = String::new();
 
         let in_port: u16;
-        let in_enabled: bool;
+        let mut critical_error_occurred: bool = false;
 
         if let StreamTypeConfig::Udp {config} = &self.config.type_config {
             out_ip_address = config.output_ip_address.clone();
             out_port = config.output_port;
-            out_enabled = config.output_enabled;
             in_port = config.input_port;
-            in_enabled = config.input_enabled;
+            direction = config.direction.clone();
         }
         else{
             todo!("Handle this error");
@@ -64,25 +66,26 @@ impl Stream for UdpStream {
         
         println!("'{}' - UdpStream starting thread", stream_name);
 
-        if out_enabled{
+        if direction == UdpDirection::UdpOutput {
             out_address = format!("{out_ip_address}:{out_port}");
+            println!("UdpStream - output enabled, sending to {out_address}");
 
             out_socket = match UdpSocket::bind("0.0.0.0:0") {
                 Ok(out_socket) => Some(out_socket),
                 Err(e) => panic!("failed to open port; err={:?}", e)
             };
         }
-
-        if in_enabled {
-            in_socket = match UdpSocket::bind("0.0.0.0:{in_port}") {
+        else {
+            println!("UdpStream - input enabled, listening on port {in_port}");
+            in_socket = match UdpSocket::bind(format!("0.0.0.0:{in_port}")) {
                 Ok(in_socket) => Some(in_socket),
                 Err(e) => panic!("failed to open port; err={:?}", e)
             };
         }
 
-        self.thread_handle = Some(thread::spawn(move || loop {
+        self.thread_handle = Some(thread::Builder::new().name(stream_name.clone()).spawn(move || loop {
 
-            if in_enabled {
+            if direction == UdpDirection::UdpInput {
                 let mut buf = [0; 1024];
                 match in_socket.as_ref().unwrap().recv_from(&mut buf) {
                     Ok((size, _)) => {
@@ -93,7 +96,7 @@ impl Stream for UdpStream {
                             text: received_message.to_string(),
                             timestamp_ms: timestamp
                         };
-                        sender.send(message).expect("Failed to send message");
+                        sender.send(message).expect(&format!("{stream_name} - Failed to send message"));
                     },
                     Err(e) => {
                         eprintln!("Failed to receive message: {}", e);
@@ -101,8 +104,7 @@ impl Stream for UdpStream {
                     }
                 }
             }
-
-            if out_enabled {
+            else {
                 match out_socket {
                     Some(ref socket) => {
                         while let Ok(msg) = receiver.try_recv() {
@@ -112,7 +114,8 @@ impl Stream for UdpStream {
                             let log_message = format!("'{originator}' - {timestamp} - '{text}'\n");
                             match socket.send_to(log_message.as_bytes(), out_address.clone()) {
                                 Err(e) => {
-                                    eprintln!("Failed to send message: {}", e);
+                                    eprintln!("{}", format!("{stream_name} - Failed to send message - {}", e.to_string()));
+                                    critical_error_occurred = true;
                                     break;
                                 },
                                 _ =>{}
@@ -128,16 +131,15 @@ impl Stream for UdpStream {
             thread::sleep(Duration::from_millis(INTERNAL_STREAM_TICK_MS));
                         
             // Has stop been requested?
-            if stop_requested.load(Ordering::Relaxed) {
+            if critical_error_occurred || stop_requested.load(Ordering::Relaxed) {
                 break;
             }
-        }));
+        }).map_err(|e| e.to_string())?);
 
         self.core.start()?;
 
         Ok(())
     }
-
     fn stop(&mut self) -> Result<(), String> {
         println!("'{}' - UdpStream stopping", self.config.name);
         self.core.stop()?;
