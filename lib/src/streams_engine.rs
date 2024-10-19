@@ -236,3 +236,42 @@ impl StreamsEngine {
     }
 
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_streams_engine() {
+        let engine = StreamsEngine::new();
+        assert!(engine.streams.is_empty());
+    }
+
+
+    #[test]
+    fn test_are_all_uuids_unique() {
+        let uuid1 = Uuid::new_v4();
+        let uuid2 = Uuid::new_v4();
+        let uuid3 = Uuid::new_v4();
+        
+        let unique_uuids = vec![&uuid1, &uuid2, &uuid3];
+        assert!(StreamsEngine::are_all_uuids_unique(&unique_uuids));
+        
+        let non_unique_uuids = vec![&uuid1, &uuid2, &uuid1];
+        assert!(!StreamsEngine::are_all_uuids_unique(&non_unique_uuids));
+    }
+
+    #[test]
+    fn test_all_elements_in_other() {
+        let uuid1 = Uuid::new_v4();
+        let uuid2 = Uuid::new_v4();
+        let uuid3 = Uuid::new_v4();
+        
+        let vec1 = vec![&uuid1, &uuid2];
+        let vec2 = vec![&uuid1, &uuid2, &uuid3];
+        
+        assert!(StreamsEngine::all_elements_in_other(&vec1, &vec2));
+        assert!(!StreamsEngine::all_elements_in_other(&vec2, &vec1));
+    }
+    
+}
