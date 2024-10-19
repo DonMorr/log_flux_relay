@@ -1,4 +1,4 @@
-use std::{sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
+use std::{sync::{atomic::{AtomicBool, Ordering}, mpsc::Sender, Arc}, thread::{self, JoinHandle}, time::Duration};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -7,7 +7,6 @@ extern crate mio_serial;
 use super::{Stream, StreamConfig, StreamTypeConfig, Message, StreamCore};
 use crate::{stream::INTERNAL_STREAM_TICK_MS, tools::waveforms_i2c::waveforms_i2c::WaveformsI2cControl};
 use std::str;
-use libloading::Library;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct WaveformsI2cStreamConfig {
@@ -31,7 +30,6 @@ pub struct WaveformsI2cStream {
     core: StreamCore,
     config: StreamConfig,
     new_message_generated_sender: Sender<Message>,
-    new_message_received_receiver: Option<Receiver<Message>>,
     thread_handle: Option<JoinHandle<()>>,
     thread_stop_requsted: Arc<AtomicBool>
 }
@@ -39,11 +37,10 @@ pub struct WaveformsI2cStream {
 impl WaveformsI2cStream {
     pub fn new(config: StreamConfig) -> Result<Self, &'static str> {
         if let StreamTypeConfig::WaveformsI2c {..} = config.type_config {
-            let mut core = StreamCore::new();
+            let core = StreamCore::new();
             Ok(Self{
                 config:config,
                 new_message_generated_sender: core.get_internal_input_sender_clone(),
-                new_message_received_receiver: Some(core.get_internal_output_receiver()),
                 core: core,
                 thread_handle: None,
                 thread_stop_requsted: Arc::new(AtomicBool::new(false))
@@ -87,7 +84,7 @@ impl Stream for WaveformsI2cStream {
                     let message = Message::new(Utc::now().timestamp_millis(),stream_name.clone(), data);
                     sender.send(message).expect("Failed to send message");
                 },
-                Err(err) => {
+                Err(_err) => {
                 }
             }
 

@@ -1,4 +1,4 @@
-use std::{net::Shutdown, sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
+use std::{sync::{atomic::{AtomicBool, Ordering}, mpsc::{Receiver, Sender}, Arc}, thread::{self, JoinHandle}, time::Duration};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

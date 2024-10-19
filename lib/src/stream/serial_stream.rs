@@ -117,7 +117,7 @@ impl Stream for SerialStream {
             }
 
             // New message received from core.
-            while let Ok(msg) = receiver.try_recv() {
+            while let Ok(_msg) = receiver.try_recv() {
                 todo!("write message to serial port");
             }
             
